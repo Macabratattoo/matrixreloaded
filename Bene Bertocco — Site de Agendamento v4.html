@@ -1,0 +1,1733 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artista Bene Bertocco — Agendamento</title>
+  <meta name="description" content="Seja bem vindo, será um prazer imenso poder lhe atender. Agendamento exclusivo de tatuagens com Bene Bertocco.">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap">
+  <style>
+/* Skip artifact shell — fixed styles served beside every artifact.
+   Complements basecoat; artifacts override --accent for their own identity. */
+:root {
+  color-scheme: light dark;
+  --accent: #2563eb;
+  --accent-contrast: #ffffff;
+  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
+  --bg: #f8f9fb;
+  --surface: #ffffff;
+  --text: #14171f;
+  --text-muted: #5b6472;
+  --border: rgba(20, 23, 31, 0.10);
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
+  --space: 16px;
+}
+/* Theme resolution. Without data-theme the viewer's system preference decides,
+   as it always did. With it, the artifact's own choice wins in BOTH directions:
+   a page that hardcodes one palette must not be handed the opposite set of
+   tokens by the machine it happens to be opened on. The dark values appear
+   twice because a media query cannot be folded into a selector list.
+   The attribute sits inside :where() so these blocks keep the specificity of a
+   bare :root — the page's own <style> is linked after this file and must go on
+   overriding any token it wants, exactly as it could before. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+    --bg: #101318;
+    --surface: #181c23;
+    --text: #eef1f6;
+    --text-muted: #9aa4b2;
+    --border: rgba(238, 241, 246, 0.12);
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  }
+}
+:root:where([data-theme="dark"]) {
+  color-scheme: dark;
+  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
+  --bg: #101318;
+  --surface: #181c23;
+  --text: #eef1f6;
+  --text-muted: #9aa4b2;
+  --border: rgba(238, 241, 246, 0.12);
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+:root:where([data-theme="light"]) { color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+img { max-width: 100%; display: block; }
+
+.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+.shell-section { padding: calc(var(--space) * 2) 0; }
+.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
+.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
+
+.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
+.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
+.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: var(--space);
+}
+
+.kpi { display: flex; flex-direction: column; gap: 4px; }
+.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
+.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
+.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
+.kpi .kpi-delta.up { color: #0a8f3c; }
+.kpi .kpi-delta.down { color: #cf3131; }
+
+table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
+table.shell-table th {
+  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--text-muted); font-weight: 600;
+}
+table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
+table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+
+.chart-box { width: 100%; min-height: 220px; }
+.chart-box svg { width: 100%; height: auto; display: block; }
+
+.muted { color: var(--text-muted); }
+.accent { color: var(--accent-text); }
+.shell-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-fade { animation: shell-fade 400ms ease both; }
+  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+</style>
+  
+  <style>
+    :root {
+      --accent: #39FF14;
+      --accent-text: #39FF14;
+      --accent-contrast: #000000;
+      --bg: #000000;
+      --surface: #0a0a0a;
+      --text: #ffffff;
+      --text-muted: #a3a3a3;
+      --border: rgba(57, 255, 20, 0.3);
+      --neon-color: #39FF14;
+      --neon-glow: rgba(57, 255, 20, 0.35);
+      --font-display: 'Orbitron', system-ui, -apple-system, sans-serif;
+      --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    html.neon-pink {
+      --neon-color: #FF2BD6;
+      --neon-glow: rgba(255, 43, 214, 0.45);
+    }
+
+    html.glitch-page body {
+      text-shadow: 1.5px 0 1px rgba(255, 0, 0, 0.45), -1.5px 0 1px rgba(0, 180, 255, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: #000000;
+      color: #ffffff;
+      font-family: var(--font-body);
+    }
+
+    body {
+      background-color: #000000;
+      color: #ffffff;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+
+    #matrix-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    #matrix-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.62);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    #page-content {
+      position: relative;
+      z-index: 2;
+    }
+
+    .neon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--neon-color);
+      background: rgba(0, 0, 0, 0.75);
+      color: var(--neon-color);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-family: var(--font-display);
+      box-shadow: 0 0 8px var(--neon-glow);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      text-decoration: none;
+      border-radius: 2px;
+      outline: none;
+    }
+
+    .neon:hover,
+    .neon:focus-visible,
+    .neon.is-active {
+      background: var(--neon-color);
+      color: #000000 !important;
+      box-shadow: 0 0 16px var(--neon-color);
+    }
+
+    header.site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(57, 255, 20, 0.3);
+      padding: 12px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .logo-link {
+      font-family: var(--font-display);
+      font-weight: 700;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-shadow: 0 0 8px #39FF14;
+      text-decoration: none;
+      font-size: 18px;
+      white-space: nowrap;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .nav-link {
+      font-family: var(--font-display);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #39FF14;
+      text-decoration: none;
+      transition: text-shadow 0.2s ease, color 0.2s ease;
+      padding: 4px 6px;
+    }
+
+    .nav-link:hover,
+    .nav-link:focus-visible {
+      color: #ffffff;
+      text-shadow: 0 0 10px #39FF14;
+    }
+
+    .hero-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 36px 24px 16px;
+      min-height: 46vh;
+      position: relative;
+    }
+
+    .hero-glow-wrap {
+      position: relative;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+
+    .hero-glow-bg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 110%;
+      height: 120%;
+      background: radial-gradient(ellipse at center, rgba(57, 255, 20, 0.5) 0%, rgba(57, 255, 20, 0.15) 50%, rgba(0, 0, 0, 0) 75%);
+      filter: blur(14px);
+      pointer-events: none;
+      z-index: 0;
+      animation: crtFlicker 2.8s infinite ease-in-out;
+    }
+
+    @keyframes crtFlicker {
+      0%, 100% { opacity: 0.35; }
+      18% { opacity: 0.2; }
+      22% { opacity: 0.45; }
+      35% { opacity: 0.18; }
+      55% { opacity: 0.42; }
+      70% { opacity: 0.26; }
+      85% { opacity: 0.45; }
+    }
+
+    .hero-title {
+      position: relative;
+      z-index: 1;
+      font-family: var(--font-display);
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      font-size: clamp(28px, 5vw, 56px);
+      color: #ffffff;
+      text-shadow: 0 0 8px #39FF14;
+      line-height: 1.15;
+    }
+
+    .hero-title.glitch-text-active::before,
+    .hero-title.glitch-text-active::after {
+      content: attr(data-text);
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+    }
+
+    .hero-title.glitch-text-active::before {
+      color: #39FF14;
+      left: 2px;
+      clip-path: polygon(0 20%, 100% 20%, 100% 45%, 0 45%);
+      animation: glitchAnimTop 0.38s ease-in-out;
+    }
+
+    .hero-title.glitch-text-active::after {
+      color: #FF2BD6;
+      left: -2px;
+      clip-path: polygon(0 60%, 100% 60%, 100% 85%, 0 85%);
+      animation: glitchAnimBtm 0.38s ease-in-out;
+    }
+
+    @keyframes glitchAnimTop {
+      0% { transform: translate(0); }
+      30% { transform: translate(-3px, -2px); }
+      60% { transform: translate(3px, 2px); }
+      100% { transform: translate(0); }
+    }
+
+    @keyframes glitchAnimBtm {
+      0% { transform: translate(0); }
+      30% { transform: translate(3px, 1px); }
+      60% { transform: translate(-3px, -1px); }
+      100% { transform: translate(0); }
+    }
+
+    .hero-subtitle {
+      color: #a3a3a3;
+      font-size: clamp(14px, 1.8vw, 18px);
+      max-width: 620px;
+      margin: 0 auto 16px;
+      font-weight: 400;
+    }
+
+    .cities-title {
+      font-family: var(--font-display);
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      font-size: 18px;
+      color: #ffffff;
+      text-shadow: 0 0 6px #39FF14;
+      margin-bottom: 6px;
+      cursor: default;
+      user-select: none;
+    }
+
+    .cities-section {
+      padding: 4px 24px 24px;
+    }
+
+    .cities-grid {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .city-card {
+      flex: 1 1 200px;
+      max-width: 240px;
+      min-width: 190px;
+      padding: 10px 16px;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .city-card-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+
+    .city-card-period {
+      font-size: 11px;
+      opacity: 0.9;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+    }
+
+    .form-section {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 36px 24px 40px;
+    }
+
+    .form-header {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .form-title {
+      font-family: var(--font-display);
+      color: #39FF14;
+      font-size: clamp(18px, 3.2vw, 24px);
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.45);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    #cidadeSelo {
+      display: none;
+      border: 1px solid #39FF14;
+      padding: 5px 14px;
+      color: #39FF14;
+      text-transform: uppercase;
+      font-size: 12px;
+      font-family: var(--font-display);
+      letter-spacing: 1.5px;
+      box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+      margin-top: 6px;
+    }
+
+    .booking-form {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      background: rgba(5, 5, 5, 0.7);
+      border: 1px solid rgba(57, 255, 20, 0.25);
+      padding: 24px;
+      border-radius: 4px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8);
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .form-label {
+      font-family: var(--font-display);
+      font-size: 12px;
+      text-transform: uppercase;
+      color: #39FF14;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+
+    .form-label .req {
+      color: #FF2BD6;
+      margin-left: 3px;
+    }
+
+    .form-note {
+      font-size: 13px;
+      color: #a3a3a3;
+      line-height: 1.4;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(57, 255, 20, 0.4);
+      color: #ffffff;
+      padding: 10px 12px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      border-radius: 2px;
+      transition: border 0.2s ease, box-shadow 0.2s ease;
+      width: 100%;
+    }
+
+    .form-input:focus,
+    .form-select:focus,
+    .form-textarea:focus {
+      outline: none;
+      border-color: #39FF14;
+      box-shadow: 0 0 8px rgba(57, 255, 20, 0.45);
+    }
+
+    .form-input:disabled,
+    .form-select:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: rgba(120, 120, 120, 0.3);
+    }
+
+    .form-select option {
+      background-color: #0b0b0b;
+      color: #ffffff;
+    }
+
+    .form-textarea {
+      min-height: 84px;
+      resize: vertical;
+    }
+
+    .size-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 8px;
+    }
+
+    .size-card {
+      padding: 10px 12px;
+      flex-direction: column;
+      text-align: center;
+      gap: 4px;
+      font-size: 11px;
+      min-height: 72px;
+    }
+
+    .size-card-code {
+      font-weight: 700;
+      font-size: 13px;
+      letter-spacing: 1px;
+    }
+
+    .size-card-desc {
+      font-family: var(--font-body);
+      text-transform: none;
+      font-size: 12px;
+      line-height: 1.3;
+      opacity: 0.95;
+    }
+
+    #precoTamanho {
+      display: none;
+      color: #a3a3a3;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+
+    .file-upload-input {
+      font-size: 12px;
+      color: #a3a3a3;
+      padding: 8px;
+    }
+
+    .file-note {
+      font-size: 12px;
+      color: #737373;
+    }
+
+    #erros {
+      display: none;
+      background: rgba(255, 40, 40, 0.1);
+      border: 1px solid rgba(255, 107, 107, 0.4);
+      color: #ff6b6b;
+      font-size: 13px;
+      padding: 12px 14px;
+      border-radius: 2px;
+      line-height: 1.5;
+    }
+
+    #erros div + div {
+      margin-top: 4px;
+    }
+
+    .btn-submit {
+      padding: 14px 32px;
+      font-size: 14px;
+      font-weight: 700;
+      width: 100%;
+      margin-top: 6px;
+    }
+
+    .submit-note {
+      text-align: center;
+      font-size: 12px;
+      color: #a3a3a3;
+      margin-top: 2px;
+    }
+
+    hr.neon-hr {
+      border: none;
+      border-top: 1px solid rgba(57, 255, 20, 0.3);
+      margin: 20px 0;
+    }
+
+    .payment-title {
+      font-family: var(--font-display);
+      font-size: 14px;
+      text-transform: uppercase;
+      color: #39FF14;
+      letter-spacing: 2px;
+      margin: 8px 0 4px;
+      text-shadow: 0 0 6px rgba(57, 255, 20, 0.4);
+    }
+
+    .payment-note {
+      font-size: 12px;
+      color: #a3a3a3;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .payment-btn-pix {
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 700;
+      width: 100%;
+    }
+
+    .verification-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: rgba(10, 10, 10, 0.7);
+      border: 1px dashed rgba(57, 255, 20, 0.35);
+      padding: 14px;
+      border-radius: 2px;
+    }
+
+    .verification-desc {
+      font-size: 13px;
+      color: #a3a3a3;
+      line-height: 1.4;
+    }
+
+    .verification-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .verification-row .form-input {
+      flex: 1 1 200px;
+    }
+
+    .btn-verificar {
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .linha-confirmado {
+      color: #39FF14;
+      font-size: 13px;
+      font-weight: 600;
+      text-shadow: 0 0 6px rgba(57, 255, 20, 0.4);
+      background: rgba(57, 255, 20, 0.08);
+      border: 1px solid rgba(57, 255, 20, 0.3);
+      padding: 10px 14px;
+      border-radius: 2px;
+    }
+
+    .btn-whatsapp-agendar {
+      padding: 10px 18px;
+      font-size: 12px;
+      font-weight: 700;
+      margin-top: 8px;
+      width: 100%;
+    }
+
+    .btn-desabilitado,
+    .btn-desabilitado:hover,
+    .btn-desabilitado:focus-visible,
+    .neon.disabled,
+    .disabled {
+      opacity: 0.5 !important;
+      cursor: not-allowed !important;
+      pointer-events: none !important;
+      box-shadow: none !important;
+      background: rgba(0, 0, 0, 0.75) !important;
+      color: var(--neon-color) !important;
+    }
+
+    .portfolio-section {
+      padding: 40px 24px;
+      position: relative;
+    }
+
+    .portfolio-title {
+      font-family: var(--font-display);
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: clamp(24px, 4vw, 40px);
+      color: #ffffff;
+      text-shadow: 0 0 10px #39FF14;
+      text-align: center;
+      margin-bottom: 24px;
+      letter-spacing: 3px;
+    }
+
+    .portfolio-container {
+      position: relative;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .portfolio-item {
+      height: 320px;
+      position: relative;
+      overflow: hidden;
+      background: #111111;
+      border: 1px solid rgba(57, 255, 20, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+
+    .portfolio-item::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at center, rgba(57, 255, 20, 0.08) 0%, rgba(0, 0, 0, 0.8) 80%);
+      pointer-events: none;
+    }
+
+    .portfolio-item-placeholder {
+      font-family: var(--font-display);
+      color: #39FF14;
+      letter-spacing: 3px;
+      font-size: 15px;
+      font-weight: 700;
+      opacity: 0.65;
+      text-shadow: 0 0 6px rgba(57, 255, 20, 0.4);
+      z-index: 1;
+    }
+
+    .portfolio-overlay-btn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      font-family: var(--font-display);
+      font-size: 20px;
+      font-weight: 900;
+      padding: 18px 44px;
+      letter-spacing: 3px;
+      box-shadow: 0 0 24px rgba(57, 255, 20, 0.5);
+    }
+
+    footer.site-footer {
+      border-top: 1px solid rgba(57, 255, 20, 0.3);
+      padding: 24px 20px;
+      text-align: center;
+      background: rgba(0, 0, 0, 0.95);
+      position: relative;
+      z-index: 10;
+    }
+
+    .footer-links {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .footer-btn {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 6px 14px;
+      letter-spacing: 1px;
+    }
+
+    .footer-copy {
+      font-size: 12px;
+      color: #737373;
+    }
+
+    @media (max-width: 768px) {
+      header.site-header {
+        flex-direction: column;
+        padding: 12px 16px;
+      }
+      .portfolio-grid {
+        grid-template-columns: 1fr;
+      }
+      .portfolio-item {
+        height: 240px;
+      }
+      .hero-section {
+        padding: 28px 16px 16px;
+      }
+      .booking-form {
+        padding: 18px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-canvas"></canvas>
+  <div id="matrix-overlay"></div>
+
+  <div id="page-content">
+    <header class="site-header">
+      <a href="#topo" class="logo-link">BENEBERTOCCO</a>
+      <nav class="nav-links" aria-label="Navegação Principal">
+        <a href="#agendar" class="nav-link">AGENDAR</a>
+        <a href="#cidades" class="nav-link">CIDADES</a>
+        <a href="#contato" class="nav-link">CONTATO</a>
+        <a href="#portfolio" class="nav-link">PORTFOLIO</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="topo" class="hero-section">
+        <div class="hero-glow-wrap">
+          <div class="hero-glow-bg" aria-hidden="true"></div>
+          <h1 id="heroH1" class="hero-title" data-text="ARTISTA BENE BERTOCCO">ARTISTA BENE BERTOCCO</h1>
+        </div>
+        <p class="hero-subtitle">Seja bem vindo, será um prazer imenso poder lhe atender</p>
+        <div class="cities-title">SELECIONE A CIDADE</div>
+      </section>
+
+      <section id="cidades" class="cities-section" aria-label="Seleção de Cidades">
+        <div class="cities-grid">
+          <button type="button" class="neon city-card" data-city="Cascavel" data-min="2026-07-20" data-max="2026-11-03" data-label="20/07/2026 a 03/11/2026">
+            <span class="city-card-name">Cascavel</span>
+            <span class="city-card-period">20/07 - 03/11</span>
+          </button>
+          <button type="button" class="neon city-card" data-city="Gravataí" data-min="2026-11-06" data-max="2026-11-28" data-label="06/11/2026 a 28/11/2026">
+            <span class="city-card-name">Gravataí</span>
+            <span class="city-card-period">06/11 - 28/11</span>
+          </button>
+          <button type="button" class="neon city-card" data-city="Balneário Camboriú" data-min="2026-12-01" data-max="2027-03-03" data-label="01/12/2026 a 03/03/2027">
+            <span class="city-card-name">Balneário Camboriú</span>
+            <span class="city-card-period">01/12 - 03/03</span>
+          </button>
+        </div>
+      </section>
+
+      <section id="agendar" class="form-section">
+        <div class="form-header">
+          <h2 class="form-title">_-_ Vamos agendar, é bem rápido ^_^</h2>
+          <div id="cidadeSelo"></div>
+        </div>
+
+        <form id="agendamentoForm" class="booking-form" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="nome">Nome Completo <span class="req">*</span></label>
+            <input type="text" id="nome" class="form-input" placeholder="Seu nome" required autocomplete="name">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="email">E-mail <span class="req">*</span></label>
+            <input type="email" id="email" class="form-input" placeholder="seu@email.com" required autocomplete="email">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="telefone">Telefone / WhatsApp <span class="req">*</span></label>
+            <input type="tel" id="telefone" class="form-input" placeholder="(00) 00000-0000" required autocomplete="tel">
+          </div>
+
+          <p class="form-note">Confira as datas disponíveis, e preencha no formulário abaixo a data desejada.</p>
+
+          <div class="form-group">
+            <label class="form-label" for="data">Data Desejada <span class="req">*</span></label>
+            <input type="date" id="data" class="form-input" disabled required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="horario">Horário <span class="req">*</span></label>
+            <select id="horario" class="form-select" required>
+              <option value="">-- Selecione --</option>
+              <option value="08:00">08:00</option>
+              <option value="08:30">08:30</option>
+              <option value="09:00">09:00</option>
+              <option value="09:30">09:30</option>
+              <option value="10:00">10:00</option>
+              <option value="10:30">10:30</option>
+              <option value="11:00">11:00</option>
+              <option value="11:30">11:30</option>
+              <option value="12:00">12:00</option>
+              <option value="12:30">12:30</option>
+              <option value="13:00">13:00</option>
+              <option value="13:30">13:30</option>
+              <option value="14:00">14:00</option>
+              <option value="14:30">14:30</option>
+              <option value="15:00">15:00</option>
+              <option value="15:30">15:30</option>
+              <option value="16:00">16:00</option>
+              <option value="16:30">16:30</option>
+              <option value="17:00">17:00</option>
+              <option value="17:30">17:30</option>
+              <option value="18:00">18:00</option>
+              <option value="18:30">18:30</option>
+              <option value="19:00">19:00</option>
+              <option value="19:30">19:30</option>
+              <option value="20:00">20:00</option>
+              <option value="20:30">20:30</option>
+              <option value="21:00">21:00</option>
+              <option value="21:30">21:30</option>
+              <option value="22:00">22:00</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="tatuagem">Qual tatuagem e local do corpo? <span class="req">*</span></label>
+            <textarea id="tatuagem" class="form-textarea" placeholder="Descreva o desenho, referências e a região do corpo desejada..." required></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tamanho / Complexidade</label>
+            <div class="size-cards-grid" role="radiogroup" aria-label="Tamanho e complexidade">
+              <button type="button" class="neon size-card" data-size-desc="Pequena até 6 cm" role="radio" aria-checked="false">
+                <span class="size-card-desc">Pequena até 6 cm</span>
+              </button>
+              <button type="button" class="neon size-card" data-size-desc="Média até 12 cm ou pequena e complexa" role="radio" aria-checked="false">
+                <span class="size-card-desc">Média até 12 cm ou pequena e complexa</span>
+              </button>
+              <button type="button" class="neon size-card" data-size-desc="Grande acima de 12 cm ou média e complexa" role="radio" aria-checked="false">
+                <span class="size-card-desc">Grande acima de 12 cm ou média e complexa</span>
+              </button>
+            </div>
+            <div id="precoTamanho"></div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="fotos">Envie fotos do local e ideia se quiser.</label>
+            <input type="file" id="fotos" class="form-input file-upload-input" accept="image/*" multiple>
+            <span class="file-note">Tamanho máximo: 10 MB</span>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="duvidas">Alguma dúvida?</label>
+            <textarea id="duvidas" class="form-textarea" placeholder="Se tiver perguntas sobre cicatrização, cores, etc..."></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="recomendacao">Teve recomendação de alguém?</label>
+            <input type="text" id="recomendacao" class="form-input" placeholder="Nome de quem recomendou">
+          </div>
+
+          <hr class="neon-hr">
+
+          <h3 class="payment-title">PAGAMENTO DO SINAL</h3>
+          <p class="payment-note">Após o pagamento do sinal, os botões ENVIAR AGENDAMENTO e AGENDAR PELO WHATSAPP serão liberados para você confirmar o seu horário.</p>
+
+          <div class="form-group">
+            <button type="button" id="btnPix" class="neon payment-btn-pix">PAGAR R$50 VIA PIX</button>
+          </div>
+
+          <div id="areaVerificar" class="verification-area" style="display: none;">
+            <p class="verification-desc">Após pagar, o Mercado Pago vai redirecionar você de volta para cá automaticamente. Se não redirecionar, cole abaixo o código do pagamento que aparece na tela de confirmação.</p>
+            <div class="verification-row">
+              <input type="text" id="codigoPagamento" class="form-input" placeholder="Código do pagamento (ex.: 4KJfe873d)" autocomplete="off">
+              <button type="button" id="btnVerificar" class="neon btn-verificar">VERIFICAR PAGAMENTO</button>
+            </div>
+          </div>
+
+          <div id="linhaConfirmado" class="linha-confirmado" style="display: none;" role="status"></div>
+
+          <div id="erros" role="alert" aria-live="polite"></div>
+
+          <button type="button" id="btnEnviar" class="neon btn-submit btn-desabilitado" disabled>ENVIAR AGENDAMENTO</button>
+
+          <button type="button" id="btnWhatsApp" class="neon btn-whatsapp-agendar btn-desabilitado" disabled>AGENDAR PELO WHATSAPP</button>
+        </form>
+      </section>
+
+      <section id="portfolio" class="portfolio-section">
+        <h2 class="portfolio-title">PORTFOLIO</h2>
+        <div class="portfolio-container">
+          <div class="portfolio-grid">
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+            <div class="portfolio-item"><span class="portfolio-item-placeholder">BENE TATTOO</span></div>
+          </div>
+          <a href="https://instagram.com/benebtattoo" target="_blank" rel="noreferrer" class="neon portfolio-overlay-btn">PORTFOLIO</a>
+        </div>
+      </section>
+    </main>
+
+    <footer id="contato" class="site-footer">
+      <div class="footer-links">
+        <a href="https://instagram.com/benebtattoo" target="_blank" rel="noreferrer" class="neon footer-btn">@benebtattoo</a>
+        <a href="https://instagram.com/macabratattoo" target="_blank" rel="noreferrer" class="neon footer-btn">@macabratattoo</a>
+        <a href="https://instagram.com/cy6tattoo" target="_blank" rel="noreferrer" class="neon footer-btn">@cy6tattoo</a>
+        <a href="https://wa.me/5547997772172" target="_blank" rel="noreferrer" class="neon footer-btn">WhatsApp</a>
+      </div>
+      <p class="footer-copy">© SKINCRACK</p>
+    </footer>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Matrix Background Canvas
+      const canvas = document.getElementById('matrix-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンБГДЖИЛЦЧШЩЪЫЬ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ+-*/=<>#%';
+      const charArray = chars.split('');
+      const fontSize = 16;
+      let columns = 0;
+      let drops = [];
+      let totalDocHeight = 0;
+
+      let matrixPhase = 'idle'; // 'idle' | 'raining' | 'dimming'
+      let isFinishing = false;
+      let animFrameId = null;
+      let finishingTimer = null;
+      let dimmingTimer = null;
+      let maxRainSafetyTimer = null;
+      let pinkTimeout = null;
+      let lastTime = 0;
+
+      function getRandomDuration() {
+        // Duração entre 1000ms e 4000ms (1 a 4 segundos) para descer do topo até o fim total do canvas
+        return 1000 + Math.random() * 3000;
+      }
+
+      function resizeCanvas() {
+        const fullHeight = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight,
+          document.body.offsetHeight,
+          document.documentElement.offsetHeight,
+          document.documentElement.clientHeight,
+          window.innerHeight
+        );
+        totalDocHeight = fullHeight;
+        canvas.width = window.innerWidth;
+        canvas.height = totalDocHeight;
+        columns = Math.max(1, Math.floor(canvas.width / fontSize));
+        
+        drops = [];
+        for (let i = 0; i < columns; i++) {
+          const durationMs = getRandomDuration();
+          drops.push({
+            y: Math.random() * totalDocHeight,
+            durationMs: durationMs,
+            speed: totalDocHeight / durationMs, // px por ms
+            finished: false
+          });
+        }
+
+        drawStationaryIdle();
+      }
+
+      function drawStationaryIdle() {
+        if (!ctx) return;
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = fontSize + 'px monospace';
+        // Letras cinza escuro persistentes no estado idle
+        ctx.fillStyle = '#222222';
+
+        for (let x = 0; x < columns; x++) {
+          const maxRows = Math.floor(totalDocHeight / fontSize);
+          for (let y = 0; y < maxRows; y += 2) {
+            if (Math.random() > 0.45) {
+              const text = charArray[Math.floor(Math.random() * charArray.length)];
+              ctx.fillText(text, x * fontSize, y * fontSize);
+            }
+          }
+        }
+      }
+
+      function startDimming() {
+        matrixPhase = 'dimming';
+        if (dimmingTimer) clearTimeout(dimmingTimer);
+        if (maxRainSafetyTimer) clearTimeout(maxRainSafetyTimer);
+
+        // Fase de dimming (~1,5-2s) para o verde virar cinza escuro e voltar ao idle
+        dimmingTimer = setTimeout(() => {
+          matrixPhase = 'idle';
+          if (animFrameId) {
+            cancelAnimationFrame(animFrameId);
+            animFrameId = null;
+          }
+          drawStationaryIdle();
+        }, 1800);
+      }
+
+      function matrixLoop(timestamp) {
+        if (!ctx) return;
+
+        const now = timestamp || performance.now();
+        if (!lastTime) lastTime = now;
+        const deltaMs = Math.min(100, Math.max(0, now - lastTime));
+        lastTime = now;
+
+        if (matrixPhase === 'raining') {
+          // Rastro suave e translúcido durante a chuva sobrepondo letras
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          ctx.font = fontSize + 'px monospace';
+          ctx.fillStyle = '#39FF14';
+
+          let allDropsCompleted = true;
+
+          for (let i = 0; i < drops.length; i++) {
+            const drop = drops[i];
+
+            if (drop.finished) {
+              continue;
+            }
+
+            allDropsCompleted = false;
+
+            const text = charArray[Math.floor(Math.random() * charArray.length)];
+            const x = i * fontSize;
+            const drawY = Math.floor(drop.y / fontSize) * fontSize;
+
+            if (drop.y >= 0 && drop.y <= totalDocHeight + fontSize) {
+              ctx.fillText(text, x, drawY);
+            }
+
+            // Delta-time: velocidade (px/ms) * deltaMs
+            drop.y += drop.speed * deltaMs;
+
+            // Quando atinge o fim da página
+            if (drop.y > totalDocHeight) {
+              if (!isFinishing) {
+                // Durante a chuva ativa, reinicia no topo com nova duração aleatória (1 a 4s)
+                const newDuration = getRandomDuration();
+                drop.durationMs = newDuration;
+                drop.speed = totalDocHeight / newDuration;
+                drop.y = -Math.random() * (fontSize * 4);
+              } else {
+                // Se a chuva já estiver terminando, deixa a gota completar a descida
+                drop.finished = true;
+              }
+            }
+          }
+
+          // A chuva permanece ATIVA até que TODAS as gotas tenham completado a descida
+          if (isFinishing && allDropsCompleted) {
+            startDimming();
+            return;
+          }
+
+          animFrameId = requestAnimationFrame(matrixLoop);
+        } else if (matrixPhase === 'dimming') {
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.06)';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          animFrameId = requestAnimationFrame(matrixLoop);
+        }
+      }
+
+      function triggerMatrixRain() {
+        if (dimmingTimer) {
+          clearTimeout(dimmingTimer);
+          dimmingTimer = null;
+        }
+
+        if (matrixPhase !== 'raining') {
+          matrixPhase = 'raining';
+          // Inicializa cada gota sorteando duração de descida entre 1000ms e 4000ms
+          for (let i = 0; i < drops.length; i++) {
+            const durationMs = getRandomDuration();
+            drops[i] = {
+              y: -Math.random() * (fontSize * 8),
+              durationMs: durationMs,
+              speed: totalDocHeight / durationMs, // velocidade em px por ms
+              finished: false
+            };
+          }
+        }
+
+        isFinishing = false;
+        lastTime = performance.now();
+
+        if (finishingTimer) clearTimeout(finishingTimer);
+        if (maxRainSafetyTimer) clearTimeout(maxRainSafetyTimer);
+
+        // Após cessar a interação do usuário, marca para as gotas completarem a descida sem reiniciar
+        finishingTimer = setTimeout(() => {
+          isFinishing = true;
+
+          // Margem de segurança máxima (~4s + margem) para garantir a transição caso alguma gota escape
+          maxRainSafetyTimer = setTimeout(() => {
+            if (matrixPhase === 'raining') {
+              drops.forEach(d => { d.finished = true; });
+              startDimming();
+            }
+          }, 4500);
+        }, 800);
+
+        if (!animFrameId) {
+          animFrameId = requestAnimationFrame(matrixLoop);
+        }
+      }
+
+      function onUserInteraction() {
+        const root = document.documentElement;
+        root.classList.add('neon-pink', 'glitch-page');
+        if (pinkTimeout) clearTimeout(pinkTimeout);
+        pinkTimeout = setTimeout(() => {
+          root.classList.remove('neon-pink', 'glitch-page');
+        }, 420);
+
+        triggerMatrixRain();
+      }
+
+      window.addEventListener('pointerdown', onUserInteraction, { passive: true });
+      window.addEventListener('scroll', onUserInteraction, { passive: true });
+      window.addEventListener('resize', () => {
+        resizeCanvas();
+      });
+
+      resizeCanvas();
+
+      // 2. Glitch Text on Hero H1
+      const heroH1 = document.getElementById('heroH1');
+      function scheduleHeroGlitch() {
+        const delay = 4000 + Math.random() * 8000;
+        setTimeout(() => {
+          if (heroH1) {
+            heroH1.classList.add('glitch-text-active');
+            setTimeout(() => {
+              heroH1.classList.remove('glitch-text-active');
+              scheduleHeroGlitch();
+            }, 400);
+          }
+        }, delay);
+      }
+      setTimeout(() => {
+        if (heroH1) {
+          heroH1.classList.add('glitch-text-active');
+          setTimeout(() => {
+            heroH1.classList.remove('glitch-text-active');
+            scheduleHeroGlitch();
+          }, 400);
+        }
+      }, 2500);
+
+      // 3. City Selection & Form Date Range
+      const cityCards = document.querySelectorAll('.city-card');
+      const dataInput = document.getElementById('data');
+      const cidadeSelo = document.getElementById('cidadeSelo');
+      let currentCity = null;
+
+      cityCards.forEach(card => {
+        card.addEventListener('click', () => {
+          cityCards.forEach(c => c.classList.remove('is-active'));
+          card.classList.add('is-active');
+
+          const nome = card.dataset.city;
+          const min = card.dataset.min;
+          const max = card.dataset.max;
+          const label = card.dataset.label;
+
+          currentCity = { nome, min, max, label };
+
+          if (dataInput) {
+            dataInput.disabled = false;
+            dataInput.min = min;
+            dataInput.max = max;
+
+            if (dataInput.value && (dataInput.value < min || dataInput.value > max)) {
+              dataInput.value = '';
+            }
+          }
+
+          if (cidadeSelo) {
+            cidadeSelo.textContent = `Agendamento — ${nome}`;
+            cidadeSelo.style.display = 'inline-block';
+          }
+
+          const targetSection = document.getElementById('agendar');
+          if (targetSection) {
+            targetSection.scrollIntoView({ behavior: 'smooth' });
+          }
+        });
+      });
+
+      // 4. Tattoo Size Selection
+      const sizeCards = document.querySelectorAll('.size-card');
+      const precoTamanho = document.getElementById('precoTamanho');
+      const tabelaPrecos = {
+        'Pequena até 6 cm': 'Preços entre R$140 a R$200 reais',
+        'Média até 12 cm ou pequena e complexa': 'Preços entre R$200 a R$500',
+        'Grande acima de 12 cm ou média e complexa': 'Preços entre R$500 a R$20.000'
+      };
+
+      let selectedSize = null;
+
+      sizeCards.forEach(card => {
+        card.addEventListener('click', () => {
+          sizeCards.forEach(c => {
+            c.classList.remove('is-active');
+            c.setAttribute('aria-checked', 'false');
+          });
+          card.classList.add('is-active');
+          card.setAttribute('aria-checked', 'true');
+          const desc = card.dataset.sizeDesc || '';
+          selectedSize = { desc };
+
+          if (precoTamanho) {
+            const textoPreco = tabelaPrecos[desc];
+            if (textoPreco) {
+              precoTamanho.textContent = textoPreco;
+              precoTamanho.style.display = 'block';
+            } else {
+              precoTamanho.style.display = 'none';
+            }
+          }
+        });
+      });
+
+      // 5. Payment State Machine & Form Management
+      const form = document.getElementById('agendamentoForm');
+      const errosDiv = document.getElementById('erros');
+      const btnPix = document.getElementById('btnPix');
+      const areaVerificar = document.getElementById('areaVerificar');
+      const codigoPagamentoInput = document.getElementById('codigoPagamento');
+      const btnVerificar = document.getElementById('btnVerificar');
+      const linhaConfirmado = document.getElementById('linhaConfirmado');
+      const btnEnviar = document.getElementById('btnEnviar');
+      const btnWhatsApp = document.getElementById('btnWhatsApp');
+
+      let estadoPagamento = 'pendente'; // 'pendente' | 'aguardando' | 'confirmado'
+      let codigoPagamento = '';
+
+      function getFormData() {
+        return {
+          nomeVal: (document.getElementById('nome')?.value || '').trim(),
+          emailVal: (document.getElementById('email')?.value || '').trim(),
+          telVal: (document.getElementById('telefone')?.value || '').trim(),
+          dataVal: (dataInput?.value || '').trim(),
+          horarioVal: (document.getElementById('horario')?.value || '').trim(),
+          tatuagemVal: (document.getElementById('tatuagem')?.value || '').trim(),
+          duvidasVal: (document.getElementById('duvidas')?.value || '').trim(),
+          recomendacaoVal: (document.getElementById('recomendacao')?.value || '').trim(),
+          fotosInput: document.getElementById('fotos')
+        };
+      }
+
+      function validateFormData(data) {
+        const erros = [];
+        if (!currentCity) {
+          erros.push('Selecione uma cidade para agendar.');
+        }
+
+        if (!data.nomeVal || !data.emailVal || !data.telVal || !data.tatuagemVal) {
+          erros.push('Preencha os campos obrigatórios.');
+        }
+
+        if (!data.dataVal) {
+          erros.push('Escolha uma data.');
+        } else if (currentCity && (data.dataVal < currentCity.min || data.dataVal > currentCity.max)) {
+          erros.push(`Agendamentos para ${currentCity.nome} apenas entre ${currentCity.label}.`);
+        }
+
+        if (!data.horarioVal) {
+          erros.push('Escolha um horário.');
+        }
+
+        return erros;
+      }
+
+      function confirmarPagamento(codigo) {
+        estadoPagamento = 'confirmado';
+        if (codigo) {
+          codigoPagamento = codigo;
+        }
+
+        if (areaVerificar) {
+          areaVerificar.style.display = 'none';
+        }
+
+        if (linhaConfirmado) {
+          linhaConfirmado.textContent = `✅ Pagamento confirmado — código ${codigoPagamento}`;
+          linhaConfirmado.style.display = 'block';
+        }
+
+        if (btnPix) {
+          btnPix.textContent = '⏳ AGUARDANDO PAGAMENTO...';
+          btnPix.classList.add('btn-desabilitado');
+          btnPix.disabled = true;
+        }
+
+        if (btnEnviar) {
+          btnEnviar.disabled = false;
+          btnEnviar.classList.remove('btn-desabilitado');
+        }
+
+        if (btnWhatsApp) {
+          btnWhatsApp.disabled = false;
+          btnWhatsApp.classList.remove('btn-desabilitado');
+        }
+      }
+
+      // 6. Botão "PAGAR R$50 VIA PIX"
+      if (btnPix) {
+        btnPix.addEventListener('click', () => {
+          window.open('https://www.mercadopago.com.br/pagamento/link', '_blank', 'noopener,noreferrer');
+          estadoPagamento = 'aguardando';
+          btnPix.textContent = '⏳ AGUARDANDO PAGAMENTO...';
+          btnPix.classList.add('btn-desabilitado');
+          btnPix.disabled = true;
+
+          if (areaVerificar && estadoPagamento !== 'confirmado') {
+            areaVerificar.style.display = 'flex';
+          }
+        });
+      }
+
+      // 7. Botão "VERIFICAR PAGAMENTO"
+      if (btnVerificar) {
+        btnVerificar.addEventListener('click', () => {
+          const valor = (codigoPagamentoInput?.value || '').trim();
+          if (valor) {
+            confirmarPagamento(valor);
+          } else if (codigoPagamentoInput) {
+            codigoPagamentoInput.focus();
+          }
+        });
+      }
+
+      // 8. Botão "ENVIAR AGENDAMENTO"
+      function processarEnvioAgendamento() {
+        if (estadoPagamento !== 'confirmado') {
+          return;
+        }
+
+        const data = getFormData();
+        const erros = validateFormData(data);
+
+        if (erros.length > 0) {
+          if (errosDiv) {
+            errosDiv.innerHTML = erros.map(msg => `<div>• ${msg}</div>`).join('');
+            errosDiv.style.display = 'block';
+            errosDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+          return;
+        }
+
+        if (errosDiv) {
+          errosDiv.style.display = 'none';
+          errosDiv.innerHTML = '';
+        }
+
+        let fileNames = 'Não anexado';
+        if (data.fotosInput && data.fotosInput.files && data.fotosInput.files.length > 0) {
+          const names = [];
+          for (let i = 0; i < data.fotosInput.files.length; i++) {
+            names.push(data.fotosInput.files[i].name);
+          }
+          fileNames = names.join(', ');
+        }
+
+        let dataFormatada = data.dataVal;
+        if (data.dataVal.includes('-')) {
+          const parts = data.dataVal.split('-');
+          if (parts.length === 3) {
+            dataFormatada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+          }
+        }
+
+        const linhas = [
+          `✅ Sinal de R$50 pago via PIX — código ${codigoPagamento}`,
+          '',
+          `📍 Cidade: ${currentCity ? currentCity.nome : 'Não especificada'}`,
+          `📅 Data: ${dataFormatada}`,
+          `⏰ Horário: ${data.horarioVal}`,
+          `👤 Nome: ${data.nomeVal}`,
+          `✉️ Email: ${data.emailVal}`,
+          `📱 Telefone/WhatsApp: ${data.telVal}`,
+          `🎨 Tatuagem e Local: ${data.tatuagemVal}`,
+          `📏 Tamanho/Complexidade: ${selectedSize ? selectedSize.desc : 'Não selecionado'}`,
+          `📎 Fotos: ${fileNames}`,
+          `❓ Dúvidas: ${data.duvidasVal || 'Nenhuma'}`,
+          `🤝 Recomendação: ${data.recomendacaoVal || 'Nenhuma'}`
+        ];
+
+        const mensagem = linhas.join('\n');
+        const url = 'https://wa.me/5547997772172?text=' + encodeURIComponent(mensagem);
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+
+      if (btnEnviar) {
+        btnEnviar.addEventListener('click', processarEnvioAgendamento);
+      }
+
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          processarEnvioAgendamento();
+        });
+      }
+
+      // 9. Botão "AGENDAR PELO WHATSAPP"
+      if (btnWhatsApp) {
+        btnWhatsApp.addEventListener('click', () => {
+          if (estadoPagamento !== 'confirmado') {
+            return;
+          }
+
+          const data = getFormData();
+          const cidadeTxt = currentCity ? currentCity.nome : 'a definir';
+
+          let dataTxt = 'a definir';
+          if (data.dataVal) {
+            if (data.dataVal.includes('-')) {
+              const parts = data.dataVal.split('-');
+              dataTxt = parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : data.dataVal;
+            } else {
+              dataTxt = data.dataVal;
+            }
+          }
+
+          const horarioTxt = data.horarioVal || 'a definir';
+          const nomeTxt = data.nomeVal || 'a definir';
+          const tatuagemTxt = data.tatuagemVal || 'a definir';
+
+          const mensagem = `Ola Bene, paguei o sinal, o codigo do pagamento é ${codigoPagamento} e gostaria de agendar\n` +
+            `📍 Cidade: ${cidadeTxt}\n` +
+            `📅 Data: ${dataTxt}\n` +
+            `⏰ Horário: ${horarioTxt}\n` +
+            `👤 Nome: ${nomeTxt}\n` +
+            `🎨 Tatuagem e Local: ${tatuagemTxt}`;
+
+          const url = 'https://wa.me/5547997772172?text=' + encodeURIComponent(mensagem);
+          window.open(url, '_blank', 'noopener,noreferrer');
+        });
+      }
+
+      // 10. Detecção Automática de Pagamento na Carga da Página (URL Params)
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        const statusVal = urlParams.get('status');
+        const hasPaymentParam = statusVal === 'approved' ||
+          urlParams.has('payment_id') ||
+          urlParams.has('collection_id') ||
+          urlParams.has('external_reference');
+
+        if (hasPaymentParam) {
+          let detectedCode = urlParams.get('payment_id') || urlParams.get('collection_id');
+          if (!detectedCode) {
+            const randChars = Math.random().toString(36).substring(2, 8).toUpperCase();
+            detectedCode = 'BB-' + randChars;
+          }
+          confirmarPagamento(detectedCode);
+        }
+      } catch (err) {
+        // Fallback seguro silencioso
+      }
+    });
+  </script>
+<script>
+/* Skip artifact shell — fixed helpers served beside every artifact. */
+(function () {
+  "use strict";
+
+  var fmt = {
+    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
+    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
+    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
+  };
+
+  // axisFmt keeps axis tick labels short (compact notation) so long values
+  // (e.g. full BRL amounts) never clip against the plot edge.
+  function axisFmt(v) {
+    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
+  }
+
+  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
+  function coerceFormat(spec) {
+    if (typeof spec === "function") return spec;
+    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
+    return function (v) { return fmt.num(v); };
+  }
+
+  function accent() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
+  }
+  function mutedColor() {
+    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
+  }
+  function svgEl(tag, attrs) {
+    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+    for (var k in attrs) el.setAttribute(k, attrs[k]);
+    return el;
+  }
+  function frame(el, w, h) {
+    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
+    el.innerHTML = "";
+    el.appendChild(svg);
+    return svg;
+  }
+
+  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
+  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
+  function maxOf(values) {
+    var m = values.length ? Math.max.apply(null, values) : 0;
+    return m > 0 ? m : 1;
+  }
+
+  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
+  function bar(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 12, plotH = H - padT - padB;
+    var step = plotW / n, bw = Math.min(step * 0.62, 64);
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    cfg.values.forEach(function (v, i) {
+      var bh = Math.max(0, (v / max) * plotH);
+      var x = padL + i * step + (step - bw) / 2;
+      var y = padT + plotH - bh;
+      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(v);
+      r.appendChild(t);
+      svg.appendChild(r);
+      var tx = svgEl("text", { x: x + bw / 2, y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // line(el, {labels:[], values:[], color?, format?}) — single-series line.
+  function line(el, cfg) {
+    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
+    var svg = frame(el, W, H);
+    var max = maxOf(cfg.values);
+    var n = cfg.values.length;
+    var plotW = W - padL - 16, plotH = H - padT - padB;
+    var color = cfg.color || accent();
+    var f = coerceFormat(cfg.format);
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - (plotH * g) / 4;
+      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 16, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
+      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
+      lbl.textContent = axisFmt((max * g) / 4);
+      svg.appendChild(lbl);
+    }
+    var pts = cfg.values.map(function (v, i) {
+      var x = padL + (n === 1 ? plotW / 2 : (plotW * i) / (n - 1));
+      var y = padT + plotH - (v / max) * plotH;
+      return [x, y];
+    });
+    var d = pts.map(function (p, i) { return (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1); }).join(" ");
+    svg.appendChild(svgEl("path", { d: d, fill: "none", stroke: color, "stroke-width": 2, "stroke-linejoin": "round" }));
+    pts.forEach(function (p, i) {
+      var c = svgEl("circle", { cx: p[0], cy: p[1], r: 3.5, fill: color });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + f(cfg.values[i]);
+      c.appendChild(t);
+      svg.appendChild(c);
+      var tx = svgEl("text", { x: p[0], y: H - 10, "text-anchor": "middle", "font-size": 11, fill: mutedColor() });
+      tx.textContent = cfg.labels[i];
+      svg.appendChild(tx);
+    });
+  }
+
+  // donut(el, {labels:[], values:[], colors?}) — donut with center total.
+  function donut(el, cfg) {
+    var W = 320, H = 280, cx = W / 2, cy = H / 2, R = 92, r = 58;
+    var svg = frame(el, W, H);
+    var total = cfg.values.reduce(function (a, b) { return a + b; }, 0) || 1;
+    var palette = cfg.colors || [accent(), "#1baf7a", "#eda100", "#e34948", "#4a3aa7", "#e87ba4"];
+    var a0 = -Math.PI / 2;
+    cfg.values.forEach(function (v, i) {
+      var a1 = a0 + (v / total) * Math.PI * 2;
+      var large = a1 - a0 > Math.PI ? 1 : 0;
+      var p = ["M", cx + R * Math.cos(a0), cy + R * Math.sin(a0),
+        "A", R, R, 0, large, 1, cx + R * Math.cos(a1), cy + R * Math.sin(a1),
+        "L", cx + r * Math.cos(a1), cy + r * Math.sin(a1),
+        "A", r, r, 0, large, 0, cx + r * Math.cos(a0), cy + r * Math.sin(a0), "Z"].join(" ");
+      var path = svgEl("path", { d: p, fill: palette[i % palette.length] });
+      var t = svgEl("title", {});
+      t.textContent = cfg.labels[i] + ": " + fmt.num(v) + " (" + fmt.pct(v / total) + ")";
+      path.appendChild(t);
+      svg.appendChild(path);
+      a0 = a1;
+    });
+    var center = svgEl("text", { x: cx, y: cy + 5, "text-anchor": "middle", "font-size": 20, "font-weight": 650, fill: "currentColor" });
+    center.textContent = fmt.num(total);
+    svg.appendChild(center);
+  }
+
+  window.skipShell = { fmt: fmt };
+  window.skipChart = { bar: bar, line: line, donut: donut };
+})();
+
+</script>
+</body>
+</html>
