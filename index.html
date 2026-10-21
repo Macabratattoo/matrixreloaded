@@ -1022,27 +1022,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
   </div>
 
   <script>
-    async function salvarNaPlanilha() {
-  const resposta = await fetch('/api/create-booking', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      cidade: currentCity ? currentCity.nome : '',
-      nome: document.getElementById('nome').value,
-      email: document.getElementById('email').value,
-      whatsapp: document.getElementById('telefone').value,
-      data: document.getElementById('data').value,
-      horario: document.getElementById('horario').value,
-      tatuagem: document.getElementById('tatuagem').value,
-      tamanho: selectedSize ? selectedSize.desc : '',
-      duvidas: document.getElementById('duvidas').value,
-      recomendacao: document.getElementById('recomendacao').value
-    })
-  });
-
-  return resposta.json();
-}    
-    document.addEventListener('DOMContentLoaded', () => {
+      document.addEventListener('DOMContentLoaded', () => {
       // 1. Matrix Background Canvas
       const canvas = document.getElementById('matrix-canvas');
       if (!canvas) return;
@@ -1463,7 +1443,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       // 7. Botão "VERIFICAR PAGAMENTO"
       if (btnVerificar) {
         btnVerificar.addEventListener('click', () => {
-          const valor = (codigoPagamentoInput?.value || '').trim();
+          const valor = (document.getElementById('codigoPagamento')?.value || '').trim();
           if (valor) {
             confirmarPagamento(valor);
           } else if (codigoPagamentoInput) {
@@ -1473,7 +1453,26 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
 
       // 8. Botão "ENVIAR AGENDAMENTO"
-      function processarEnvioAgendamento() {
+      async function salvarNaPlanilha() {
+        const resposta = await fetch('/api/create-booking', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cidade: currentCity ? currentCity.nome : '',
+            nome: document.getElementById('nome').value,
+            email: document.getElementById('email').value,
+            whatsapp: document.getElementById('telefone').value,
+            data: document.getElementById('data').value,
+            horario: document.getElementById('horario').value,
+            tatuagem: document.getElementById('tatuagem').value,
+            tamanho: selectedSize ? selectedSize.desc : '',
+            duvidas: document.getElementById('duvidas').value,
+            recomendacao: document.getElementById('recomendacao').value
+          })
+        });
+        return resposta.json();
+      }
+      async function processarEnvioAgendamento() {
         const resultado = await salvarNaPlanilha();
           if (!resultado.ok) {
             alert('Não foi possível salvar seu agendamento. Tente novamente.');
