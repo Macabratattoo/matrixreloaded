@@ -8,106 +8,6 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/basecoat-css@1.0.2/dist/basecoat.cdn.min.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600&display=swap">
   <style>
-/* Skip artifact shell — fixed styles served beside every artifact.
-   Complements basecoat; artifacts override --accent for their own identity. */
-:root {
-  color-scheme: light dark;
-  --accent: #2563eb;
-  --accent-contrast: #ffffff;
-  --accent-text: color-mix(in srgb, var(--accent) 72%, #000);
-  --bg: #f8f9fb;
-  --surface: #ffffff;
-  --text: #14171f;
-  --text-muted: #5b6472;
-  --border: rgba(20, 23, 31, 0.10);
-  --radius: 10px;
-  --shadow: 0 1px 3px rgba(20, 23, 31, 0.08);
-  --space: 16px;
-}
-/* Theme resolution. Without data-theme the viewer's system preference decides,
-   as it always did. With it, the artifact's own choice wins in BOTH directions:
-   a page that hardcodes one palette must not be handed the opposite set of
-   tokens by the machine it happens to be opened on. The dark values appear
-   twice because a media query cannot be folded into a selector list.
-   The attribute sits inside :where() so these blocks keep the specificity of a
-   bare :root — the page's own <style> is linked after this file and must go on
-   overriding any token it wants, exactly as it could before. */
-@media (prefers-color-scheme: dark) {
-  :root:where(:not([data-theme="light"])) {
-    --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
-    --bg: #101318;
-    --surface: #181c23;
-    --text: #eef1f6;
-    --text-muted: #9aa4b2;
-    --border: rgba(238, 241, 246, 0.12);
-    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-  }
-}
-:root:where([data-theme="dark"]) {
-  color-scheme: dark;
-  --accent-text: color-mix(in srgb, var(--accent) 78%, #fff);
-  --bg: #101318;
-  --surface: #181c23;
-  --text: #eef1f6;
-  --text-muted: #9aa4b2;
-  --border: rgba(238, 241, 246, 0.12);
-  --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
-}
-:root:where([data-theme="light"]) { color-scheme: light; }
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; }
-body {
-  background: var(--bg);
-  color: var(--text);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.55;
-  -webkit-font-smoothing: antialiased;
-}
-img { max-width: 100%; display: block; }
-.shell-container { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
-.shell-section { padding: calc(var(--space) * 2) 0; }
-.shell-grid { display: grid; gap: var(--space); grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.shell-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: var(--space); }
-.shell-footer { padding: 24px 0 40px; color: var(--text-muted); font-size: 13px; }
-.shell-hero { padding: calc(var(--space) * 3) 0 calc(var(--space) * 2); }
-.shell-hero h1 { font-size: clamp(26px, 4vw, 40px); line-height: 1.15; margin: 0 0 10px; text-wrap: balance; }
-.shell-hero p { color: var(--text-muted); max-width: 60ch; margin: 0; }
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: var(--space);
-}
-.kpi { display: flex; flex-direction: column; gap: 4px; }
-.kpi .kpi-value { font-size: 28px; font-weight: 650; line-height: 1.1; }
-.kpi .kpi-label { font-size: 13px; color: var(--text-muted); }
-.kpi .kpi-delta { font-size: 12.5px; font-weight: 600; }
-.kpi .kpi-delta.up { color: #0a8f3c; }
-.kpi .kpi-delta.down { color: #cf3131; }
-table.shell-table { border-collapse: collapse; width: 100%; font-size: 14px; }
-table.shell-table th {
-  text-align: left; font-size: 11.5px; letter-spacing: 0.05em; text-transform: uppercase;
-  color: var(--text-muted); font-weight: 600;
-}
-table.shell-table th, table.shell-table td { padding: 9px 12px 9px 0; border-bottom: 1px solid var(--border); }
-table.shell-table td.num, table.shell-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
-table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-.chart-box { width: 100%; min-height: 220px; }
-.chart-box svg { width: 100%; height: auto; display: block; }
-.muted { color: var(--text-muted); }
-.accent { color: var(--accent-text); }
-.shell-badge {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent); color: var(--accent-text);
-}
-@media (prefers-reduced-motion: no-preference) {
-  .shell-fade { animation: shell-fade 400ms ease both; }
-  @keyframes shell-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-}
-</style>
-  <style>
     :root {
       --accent: #39FF14;
       --accent-text: #39FF14;
@@ -937,7 +837,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
   </div>
 
   <script>
-      document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', () => {
       // 1. Matrix Background Canvas
       const canvas = document.getElementById('matrix-canvas');
       if (!canvas) return;
@@ -1122,6 +1022,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         resizeCanvas();
       });
       resizeCanvas();
+
       // 2. Glitch Text on Hero H1
       const heroH1 = document.getElementById('heroH1');
       function scheduleHeroGlitch() {
@@ -1145,6 +1046,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }, 400);
         }
       }, 2500);
+
       // 3. City Selection & Form Date Range
       const cityCards = document.querySelectorAll('.city-card');
       const dataInput = document.getElementById('data');
@@ -1178,6 +1080,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }
         });
       });
+
       // 4. Tattoo Size Selection
       const sizeCards = document.querySelectorAll('.size-card');
       const precoTamanho = document.getElementById('precoTamanho');
@@ -1208,6 +1111,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }
         });
       });
+
       // 5. Pagamento do sinal, gravação na planilha e WhatsApp
       const form = document.getElementById('agendamentoForm');
       const errosDiv = document.getElementById('erros');
@@ -1225,6 +1129,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       let codigoPagamento = '';
       let agendamentoId = null;
       let processando = false;
+
       function getFormData() {
         return {
           nomeVal: (document.getElementById('nome')?.value || '').trim(),
@@ -1238,6 +1143,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           fotosInput: document.getElementById('fotos')
         };
       }
+
       function validateFormData(data) {
         const erros = [];
         if (!currentCity) {
@@ -1256,11 +1162,13 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         }
         return erros;
       }
+
       function formatarDataBR(valor) {
         if (!valor || !valor.includes('-')) return valor || '';
         const partes = valor.split('-');
         return partes.length === 3 ? `${partes[2]}/${partes[1]}/${partes[0]}` : valor;
       }
+
       function mostrarErros(erros) {
         if (!errosDiv) return;
         if (erros.length === 0) {
@@ -1272,6 +1180,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         errosDiv.style.display = 'block';
         errosDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
+
       function atualizarBotaoFlutuante() {
         if (!btnFlutuante) return;
         if (estadoPagamento === 'confirmado') {
@@ -1282,6 +1191,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           btnFlutuante.textContent = 'PAGAR SINAL';
         }
       }
+
       async function salvarNaPlanilha(data) {
         const resposta = await fetch('/api/create-booking', {
           method: 'POST',
@@ -1302,6 +1212,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         const retorno = await resposta.json().catch(() => ({}));
         return { ok: resposta.ok && retorno.ok === true, id: retorno.id, erro: retorno.error || retorno.detalhe };
       }
+
       async function garantirAgendamentoSalvo(data) {
         if (agendamentoId) return true;
         const resultado = await salvarNaPlanilha(data);
@@ -1313,6 +1224,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         agendamentoId = resultado.id;
         return true;
       }
+
       function confirmarPagamento(codigo) {
         estadoPagamento = 'confirmado';
         if (codigo) {
@@ -1336,6 +1248,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         }
         atualizarBotaoFlutuante();
       }
+
       async function iniciarPagamento() {
         if (processando) return;
         if (estadoPagamento === 'confirmado') return;
@@ -1365,6 +1278,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           processando = false;
         }
       }
+
       function abrirWhatsApp() {
         const data = getFormData();
         const erros = validateFormData(data);
@@ -1382,10 +1296,12 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
         ].join('\n');
         window.open(WHATSAPP_URL + '?text=' + encodeURIComponent(mensagem), '_blank', 'noopener,noreferrer');
       }
+
       // Botão "PAGAR R$50"
       if (btnPix) {
         btnPix.addEventListener('click', iniciarPagamento);
       }
+
       // Botão "VERIFICAR PAGAMENTO"
       if (btnVerificar) {
         btnVerificar.addEventListener('click', () => {
@@ -1397,6 +1313,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }
         });
       }
+
       // Caixa flutuante: 1) paga o sinal  2) após confirmação, abre o WhatsApp
       if (btnFlutuante) {
         btnFlutuante.addEventListener('click', () => {
@@ -1407,6 +1324,7 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           }
         });
       }
+
       // Botão "ENVIAR AGENDAMENTO" (liberado após a confirmação do pagamento)
       if (btnEnviar) {
         btnEnviar.addEventListener('click', () => {
@@ -1414,11 +1332,13 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
           abrirWhatsApp();
         });
       }
+
       if (form) {
         form.addEventListener('submit', (e) => {
           e.preventDefault();
         });
       }
+
       // 6. Detecção Automática de Pagamento na Carga da Página (URL Params)
       try {
         const urlParams = new URLSearchParams(window.location.search);
@@ -1440,71 +1360,5 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
       }
     });
   </script>
-<script>
-/* Skip artifact shell — fixed helpers served beside every artifact. */
-(function () {
-  "use strict";
-  var fmt = {
-    num: function (v, opts) { return new Intl.NumberFormat("pt-BR", opts || {}).format(v); },
-    brl: function (v) { return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v); },
-    pct: function (v) { return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits: 1 }).format(v); }
-  };
-  // axisFmt keeps axis tick labels short (compact notation) so long values
-  // (e.g. full BRL amounts) never clip against the plot edge.
-  function axisFmt(v) {
-    return fmt.num(v, { notation: "compact", maximumFractionDigits: 1 });
-  }
-  // format accepts a function OR one of the fmt names ("num" | "brl" | "pct").
-  function coerceFormat(spec) {
-    if (typeof spec === "function") return spec;
-    if (typeof spec === "string" && fmt[spec]) return fmt[spec];
-    return function (v) { return fmt.num(v); };
-  }
-  function accent() {
-    return getComputedStyle(document.documentElement).getPropertyValue("--accent").trim() || "#2563eb";
-  }
-  function mutedColor() {
-    return getComputedStyle(document.documentElement).getPropertyValue("--text-muted").trim() || "#5b6472";
-  }
-  function svgEl(tag, attrs) {
-    var el = document.createElementNS("http://www.w3.org/2000/svg", tag);
-    for (var k in attrs) el.setAttribute(k, attrs[k]);
-    return el;
-  }
-  function frame(el, w, h) {
-    var svg = svgEl("svg", { viewBox: "0 0 " + w + " " + h, role: "img" });
-    el.innerHTML = "";
-    el.appendChild(svg);
-    return svg;
-  }
-  // maxOf guards the axis scale: empty values would give -Infinity (truthy,
-  // so "|| 1" can't catch it) and a non-positive max would flip the chart.
-  function maxOf(values) {
-    var m = values.length ? Math.max.apply(null, values) : 0;
-    return m > 0 ? m : 1;
-  }
-  // bar(el, {labels:[], values:[], color?, format?}) — vertical bar chart.
-  function bar(el, cfg) {
-    var W = 640, H = 280, padL = 46, padB = 30, padT = 12;
-    var svg = frame(el, W, H);
-    var max = maxOf(cfg.values);
-    var n = cfg.values.length;
-    var plotW = W - padL - 12, plotH = H - padT - padB;
-    var step = plotW / n, bw = Math.min(step * 0.62, 64);
-    var color = cfg.color || accent();
-    var f = coerceFormat(cfg.format);
-    for (var g = 0; g <= 4; g++) {
-      var gy = padT + plotH - (plotH * g) / 4;
-      svg.appendChild(svgEl("line", { x1: padL, y1: gy, x2: W - 12, y2: gy, stroke: "currentColor", "stroke-opacity": 0.08 }));
-      var lbl = svgEl("text", { x: padL - 8, y: gy + 4, "text-anchor": "end", "font-size": 10, fill: mutedColor() });
-      lbl.textContent = axisFmt((max * g) / 4);
-      svg.appendChild(lbl);
-    }
-    cfg.values.forEach(function (v, i) {
-      var bh = Math.max(0, (v / max) * plotH);
-      var x = padL + i * step + (step - bw) / 2;
-      var y = padT + plotH - bh;
-      var r = svgEl("rect", { x: x, y: y, width: bw, height: bh, rx: 4, fill: color });
-      var t = svgEl("title", {});
-      t.textContent = cfg.labels[i] + ": " + f(v);
-      r.appendChild(t
+</body>
+</html>
