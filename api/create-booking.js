@@ -1,4 +1,4 @@
-onst { google } = require('googleapis');
+const { google } = require('googleapis');
 
 const ABAS = {
   'Cascavel': 'Cascavel',
