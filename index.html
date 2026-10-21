@@ -1474,6 +1474,11 @@ table.shell-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 
 
       // 8. Botão "ENVIAR AGENDAMENTO"
       function processarEnvioAgendamento() {
+        const resultado = await salvarNaPlanilha();
+          if (!resultado.ok) {
+            alert('Não foi possível salvar seu agendamento. Tente novamente.');
+          return;
+        }
         if (estadoPagamento !== 'confirmado') {
           return;
         }
