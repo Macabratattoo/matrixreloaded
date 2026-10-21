@@ -353,12 +353,6 @@
       border-color: #39FF14;
       box-shadow: 0 0 8px rgba(57, 255, 20, 0.45);
     }
-    .form-input:disabled,
-    .form-select:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-      border-color: rgba(120, 120, 120, 0.3);
-    }
     .form-select option {
       background-color: #0b0b0b;
       color: #ffffff;
@@ -366,6 +360,85 @@
     .form-textarea {
       min-height: 84px;
       resize: vertical;
+    }
+    /* Calendário sempre aberto */
+    .cal-aviso {
+      font-size: 13px;
+      color: #a3a3a3;
+      border: 1px dashed rgba(57, 255, 20, 0.35);
+      padding: 12px;
+      border-radius: 2px;
+      text-align: center;
+    }
+    .cal {
+      background: rgba(0, 0, 0, 0.65);
+      border: 1px solid rgba(57, 255, 20, 0.4);
+      padding: 12px;
+      border-radius: 2px;
+    }
+    .cal-topo {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    .cal-titulo {
+      font-family: var(--font-display);
+      font-size: 13px;
+      color: #39FF14;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      text-align: center;
+    }
+    .cal-nav {
+      width: 36px;
+      height: 36px;
+      font-size: 18px;
+      padding: 0;
+    }
+    .cal-nav:disabled {
+      opacity: 0.3;
+      pointer-events: none;
+    }
+    .cal-semana,
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+    }
+    .cal-semana span {
+      text-align: center;
+      font-size: 11px;
+      color: #a3a3a3;
+      padding: 4px 0;
+    }
+    .cal-dia {
+      background: transparent;
+      border: 1px solid rgba(57, 255, 20, 0.2);
+      color: #ffffff;
+      padding: 9px 0;
+      font-size: 13px;
+      font-family: var(--font-body);
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.15s ease;
+    }
+    .cal-dia:hover:not(:disabled) {
+      border-color: #39FF14;
+      box-shadow: 0 0 6px rgba(57, 255, 20, 0.4);
+    }
+    .cal-dia:disabled {
+      opacity: 0.25;
+      cursor: not-allowed;
+    }
+    .cal-dia.cal-selecionado {
+      background: #39FF14;
+      color: #000000;
+      font-weight: 700;
+    }
+    .cal-dia.cal-hoje {
+      border-color: #FF2BD6;
     }
     .size-cards-grid {
       display: grid;
@@ -716,8 +789,20 @@
           </div>
           <p class="form-note">Confira as datas disponíveis, e preencha no formulário abaixo a data desejada.</p>
           <div class="form-group">
-            <label class="form-label" for="data">Data Desejada <span class="req">*</span></label>
-            <input type="date" id="data" class="form-input" disabled required>
+            <span class="form-label">Data Desejada <span class="req">*</span></span>
+            <div id="calAviso" class="cal-aviso">Escolha uma cidade acima para liberar o calendário.</div>
+            <div id="calendarioData" class="cal" style="display: none;">
+              <div class="cal-topo">
+                <button type="button" id="calPrev" class="neon cal-nav" aria-label="Mês anterior">&lsaquo;</button>
+                <span id="calTitulo" class="cal-titulo"></span>
+                <button type="button" id="calNext" class="neon cal-nav" aria-label="Próximo mês">&rsaquo;</button>
+              </div>
+              <div class="cal-semana" aria-hidden="true">
+                <span>D</span><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span>
+              </div>
+              <div id="calGrid" class="cal-grid" role="grid" aria-label="Calendário de datas"></div>
+            </div>
+            <input type="hidden" id="data">
           </div>
           <div class="form-group">
             <label class="form-label" for="horario">Horário <span class="req">*</span></label>
@@ -849,7 +934,7 @@
       let columns = 0;
       let drops = [];
       let totalDocHeight = 0;
-      let matrixPhase = 'idle'; // 'idle' | 'raining' | 'dimming'
+      let matrixPhase = 'idle';
       let isFinishing = false;
       let animFrameId = null;
       let finishingTimer = null;
@@ -858,7 +943,6 @@
       let pinkTimeout = null;
       let lastTime = 0;
       function getRandomDuration() {
-        // Duração entre 1000ms e 4000ms (1 a 4 segundos) para descer do topo até o fim total do canvas
         return 1000 + Math.random() * 3000;
       }
       function resizeCanvas() {
@@ -880,7 +964,7 @@
           drops.push({
             y: Math.random() * totalDocHeight,
             durationMs: durationMs,
-            speed: totalDocHeight / durationMs, // px por ms
+            speed: totalDocHeight / durationMs,
             finished: false
           });
         }
@@ -891,7 +975,6 @@
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.font = fontSize + 'px monospace';
-        // Letras cinza escuro persistentes no estado idle
         ctx.fillStyle = '#222222';
         for (let x = 0; x < columns; x++) {
           const maxRows = Math.floor(totalDocHeight / fontSize);
@@ -907,7 +990,6 @@
         matrixPhase = 'dimming';
         if (dimmingTimer) clearTimeout(dimmingTimer);
         if (maxRainSafetyTimer) clearTimeout(maxRainSafetyTimer);
-        // Fase de dimming (~1,5-2s) para o verde virar cinza escuro e voltar ao idle
         dimmingTimer = setTimeout(() => {
           matrixPhase = 'idle';
           if (animFrameId) {
@@ -924,7 +1006,6 @@
         const deltaMs = Math.min(100, Math.max(0, now - lastTime));
         lastTime = now;
         if (matrixPhase === 'raining') {
-          // Rastro suave e translúcido durante a chuva sobrepondo letras
           ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.font = fontSize + 'px monospace';
@@ -942,23 +1023,18 @@
             if (drop.y >= 0 && drop.y <= totalDocHeight + fontSize) {
               ctx.fillText(text, x, drawY);
             }
-            // Delta-time: velocidade (px/ms) * deltaMs
             drop.y += drop.speed * deltaMs;
-            // Quando atinge o fim da página
             if (drop.y > totalDocHeight) {
               if (!isFinishing) {
-                // Durante a chuva ativa, reinicia no topo com nova duração aleatória (1 a 4s)
                 const newDuration = getRandomDuration();
                 drop.durationMs = newDuration;
                 drop.speed = totalDocHeight / newDuration;
                 drop.y = -Math.random() * (fontSize * 4);
               } else {
-                // Se a chuva já estiver terminando, deixa a gota completar a descida
                 drop.finished = true;
               }
             }
           }
-          // A chuva permanece ATIVA até que TODAS as gotas tenham completado a descida
           if (isFinishing && allDropsCompleted) {
             startDimming();
             return;
@@ -977,13 +1053,12 @@
         }
         if (matrixPhase !== 'raining') {
           matrixPhase = 'raining';
-          // Inicializa cada gota sorteando duração de descida entre 1000ms e 4000ms
           for (let i = 0; i < drops.length; i++) {
             const durationMs = getRandomDuration();
             drops[i] = {
               y: -Math.random() * (fontSize * 8),
               durationMs: durationMs,
-              speed: totalDocHeight / durationMs, // velocidade em px por ms
+              speed: totalDocHeight / durationMs,
               finished: false
             };
           }
@@ -992,10 +1067,8 @@
         lastTime = performance.now();
         if (finishingTimer) clearTimeout(finishingTimer);
         if (maxRainSafetyTimer) clearTimeout(maxRainSafetyTimer);
-        // Após cessar a interação do usuário, marca para as gotas completarem a descida sem reiniciar
         finishingTimer = setTimeout(() => {
           isFinishing = true;
-          // Margem de segurança máxima (~4s + margem) para garantir a transição caso alguma gota escape
           maxRainSafetyTimer = setTimeout(() => {
             if (matrixPhase === 'raining') {
               drops.forEach(d => { d.finished = true; });
@@ -1047,11 +1120,103 @@
         }
       }, 2500);
 
-      // 3. City Selection & Form Date Range
+      // 3. City Selection
       const cityCards = document.querySelectorAll('.city-card');
-      const dataInput = document.getElementById('data');
       const cidadeSelo = document.getElementById('cidadeSelo');
       let currentCity = null;
+
+      // 3b. Calendário sempre aberto (sem campo de digitação)
+      const dataInput = document.getElementById('data'); // campo oculto com o valor AAAA-MM-DD
+      const calendarioEl = document.getElementById('calendarioData');
+      const calAviso = document.getElementById('calAviso');
+      const calTitulo = document.getElementById('calTitulo');
+      const calGrid = document.getElementById('calGrid');
+      const calPrev = document.getElementById('calPrev');
+      const calNext = document.getElementById('calNext');
+      const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+      let calMinISO = null;
+      let calMaxISO = null;
+      let calMinKey = 0;
+      let calMaxKey = 0;
+      let calViewYear = 0;
+      let calViewMonth = 0;
+
+      function toISO(dt) {
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      }
+      function parseISO(texto) {
+        const [y, m, d] = texto.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      }
+      function chaveMes(ano, mes) {
+        return ano * 12 + mes;
+      }
+
+      function renderCalendario() {
+        if (!calMinISO) return;
+        calTitulo.textContent = `${MESES[calViewMonth]} ${calViewYear}`;
+        calGrid.innerHTML = '';
+        const hoje = toISO(new Date());
+        const primeiroDia = new Date(calViewYear, calViewMonth, 1).getDay();
+        const diasNoMes = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+        for (let i = 0; i < primeiroDia; i++) {
+          const vazio = document.createElement('span');
+          calGrid.appendChild(vazio);
+        }
+        for (let dia = 1; dia <= diasNoMes; dia++) {
+          const iso = toISO(new Date(calViewYear, calViewMonth, dia));
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'cal-dia';
+          btn.textContent = dia;
+          btn.setAttribute('aria-label', `${dia} de ${MESES[calViewMonth]}`);
+          if (iso < calMinISO || iso > calMaxISO) {
+            btn.disabled = true;
+          }
+          if (iso === hoje) {
+            btn.classList.add('cal-hoje');
+          }
+          if (iso === dataInput.value) {
+            btn.classList.add('cal-selecionado');
+          }
+          btn.addEventListener('click', () => {
+            dataInput.value = iso;
+            renderCalendario();
+          });
+          calGrid.appendChild(btn);
+        }
+        const chaveAtual = chaveMes(calViewYear, calViewMonth);
+        calPrev.disabled = chaveAtual <= calMinKey;
+        calNext.disabled = chaveAtual >= calMaxKey;
+      }
+
+      function mudarMes(delta) {
+        const d = new Date(calViewYear, calViewMonth + delta, 1);
+        calViewYear = d.getFullYear();
+        calViewMonth = d.getMonth();
+        renderCalendario();
+      }
+
+      function configurarCalendario(min, max) {
+        calMinISO = min;
+        calMaxISO = max;
+        const inicio = parseISO(min);
+        const fim = parseISO(max);
+        calMinKey = chaveMes(inicio.getFullYear(), inicio.getMonth());
+        calMaxKey = chaveMes(fim.getFullYear(), fim.getMonth());
+        calViewYear = inicio.getFullYear();
+        calViewMonth = inicio.getMonth();
+        if (dataInput.value && (dataInput.value < min || dataInput.value > max)) {
+          dataInput.value = '';
+        }
+        calAviso.style.display = 'none';
+        calendarioEl.style.display = 'block';
+        renderCalendario();
+      }
+
+      calPrev.addEventListener('click', () => mudarMes(-1));
+      calNext.addEventListener('click', () => mudarMes(1));
+
       cityCards.forEach(card => {
         card.addEventListener('click', () => {
           cityCards.forEach(c => c.classList.remove('is-active'));
@@ -1062,14 +1227,7 @@
           const max = card.dataset.max;
           const label = card.dataset.label;
           currentCity = { nome, aba, min, max, label };
-          if (dataInput) {
-            dataInput.disabled = false;
-            dataInput.min = min;
-            dataInput.max = max;
-            if (dataInput.value && (dataInput.value < min || dataInput.value > max)) {
-              dataInput.value = '';
-            }
-          }
+          configurarCalendario(min, max);
           if (cidadeSelo) {
             cidadeSelo.textContent = `Agendamento — ${nome}`;
             cidadeSelo.style.display = 'inline-block';
@@ -1153,7 +1311,7 @@
           erros.push('Preencha os campos obrigatórios.');
         }
         if (!data.dataVal) {
-          erros.push('Escolha uma data.');
+          erros.push('Escolha uma data no calendário.');
         } else if (currentCity && (data.dataVal < currentCity.min || data.dataVal > currentCity.max)) {
           erros.push(`Agendamentos para ${currentCity.nome} apenas entre ${currentCity.label}.`);
         }
@@ -1192,6 +1350,7 @@
         }
       }
 
+      // Grava o agendamento na planilha com status "aguardando_pagamento"
       async function salvarNaPlanilha(data) {
         const resposta = await fetch('/api/create-booking', {
           method: 'POST',
