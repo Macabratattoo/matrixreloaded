@@ -861,7 +861,7 @@
           <div class="form-group">
             <label class="form-label" for="fotos">Envie fotos do local e ideia se quiser.</label>
             <input type="file" id="fotos" class="form-input file-upload-input" accept="image/*" multiple>
-            <span class="file-note">Tamanho máximo: 10 MB</span>
+            <span class="file-note">envie de 3 a 7 fotos</span>
           </div>
           <div class="form-group">
             <label class="form-label" for="duvidas">Alguma dúvida?</label>
@@ -1340,7 +1340,7 @@
         errosDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       }
 
-      function atualizarBotaoFlutuante() {
+     function atualizarBotaoFlutuante() {
         if (!btnFlutuante) return;
         if (estadoPagamento === 'confirmado') {
           btnFlutuante.textContent = 'AGENDAR PELO WHATSAPP';
@@ -1350,9 +1350,80 @@
           btnFlutuante.textContent = 'PAGAR SINAL';
         }
       }
+      // Grava as fotos enviadas na pasta do google drive 
+      function comprimirImagem(file, maxLado = 1280, qualidade = 0.8) {
+        return new Promise((resolve, reject) => {
+          const url = URL.createObjectURL(file);
+          const img = new Image();
+          img.onload = () => {
+            const escala = Math.min(1, maxLado / Math.max(img.width, img.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.round(img.width * escala);
+            canvas.height = Math.round(img.height * escala);
+            canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            canvas.toBlob(
+              blob => blob ? resolve(blob) : reject(new Error('Não foi possível processar a foto')),
+              'image/jpeg',
+              qualidade
+            );
+          };
+          img.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Formato de foto não suportado. Use JPG ou PNG.'));
+          };
+          img.src = url;
+        });
+      }
+    
+    function blobParaBase64(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    }
+    
+    const LIMITE_TOTAL_BASE64 = 3800000;
 
+    async function prepararFotos(inputFotos) {
+      const arquivos = Array.from(inputFotos?.files || []).slice(0, 10);
+      if (arquivos.length === 0) return [];
+    
+      // Começa com qualidade alta. Se o total passar do limite, tenta versões menores.
+      const niveis = [
+        { maxLado: 1600, qualidade: 0.8 },
+        { maxLado: 1280, qualidade: 0.7 },
+        { maxLado: 1024, qualidade: 0.6 }
+      ];
+    
+      for (const nivel of niveis) {
+        const fotos = [];
+        let total = 0;
+    
+        for (const file of arquivos) {
+          const blob = await comprimirImagem(file, nivel.maxLado, nivel.qualidade);
+          const base64 = await blobParaBase64(blob);
+          total += base64.length;
+          fotos.push({
+            name: file.name.replace(/\.[^.]+$/, '') + '.jpg',
+            mimeType: 'image/jpeg',
+            base64
+          });
+        }
+    
+        if (total <= LIMITE_TOTAL_BASE64) return fotos;
+      }
+    
+      throw new Error('As fotos ainda ficaram grandes. Envie menos fotos ou fotos menores.');
+      return fotos;
+    }
       // Grava o agendamento na planilha com status "aguardando_pagamento"
+     // Grava o agendamento na planilha com status "aguardando_pagamento" e envia as fotos ao Drive
       async function salvarNaPlanilha(data) {
+        const fotos = await prepararFotos(data.fotosInput);
+      
         const resposta = await fetch('/api/create-booking', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1366,9 +1437,11 @@
             tatuagem: data.tatuagemVal,
             tamanho: selectedSize ? selectedSize.desc : '',
             duvidas: data.duvidasVal,
-            recomendacao: data.recomendacaoVal
+            recomendacao: data.recomendacaoVal,
+            fotos: fotos
           })
         });
+      
         const retorno = await resposta.json().catch(() => ({}));
         return { ok: resposta.ok && retorno.ok === true, id: retorno.id, erro: retorno.error || retorno.detalhe };
       }
