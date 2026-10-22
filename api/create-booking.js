@@ -1,9 +1,11 @@
 const { google } = require('googleapis');
 
+// Chaves sem acento e em minúsculas. Aceita o nome da cidade e o nome da aba.
 const ABAS = {
-  'Cascavel': 'Cascavel',
-  'Gravataí': 'Gravatai',
-  'Balneário Camboriú': 'Camboriu'
+  'cascavel': 'Cascavel',
+  'gravatai': 'Gravatai',
+  'balneario camboriu': 'Camboriu',
+  'camboriu': 'Camboriu'
 };
 
 module.exports = async function handler(req, res) {
