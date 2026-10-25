@@ -7,8 +7,7 @@ function cidadePorAgendamento(id) {
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end();
-  res.status(200).json({ received: true });
-  if (req.method !== 'POST') return;
+  if (req.method !== 'POST') return res.status(200).json({ received: true });
 
   try {
     const tipo = req.body?.type || req.body?.topic;
@@ -36,7 +35,9 @@ module.exports = async function handler(req, res) {
         cidade
       }
     }, fakeResponse);
+    return res.status(200).json({ received: true });
   } catch (erro) {
     console.error('Webhook Mercado Pago:', erro);
+    return res.status(200).json({ received: true });
   }
 };
