@@ -1517,7 +1517,7 @@
         const bricksBuilder = mp.bricks();
         paymentBrickController = await bricksBuilder.create('payment', 'paymentBrickContainer', {
           initialization: { amount: 50, payer: { email: data.emailVal } },
-          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', bankTransfer: 'all', mercadoPago: 'all' } },
+          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', bankTransfer: 'all' } },
           callbacks: {
             onReady: () => { if (btnPix) btnPix.style.display = 'none'; },
             onSubmit: async ({ formData }) => {
@@ -1533,7 +1533,7 @@
                 })
               });
               const pagamento = await resposta.json().catch(() => ({}));
-              if (!resposta.ok || !pagamento.ok) throw new Error(pagamento.error || 'Pagamento recusado');
+              if (!resposta.ok || !pagamento.ok) throw new Error(pagamento.detail || pagamento.error || 'Pagamento recusado');
               paymentProcessadoId = pagamento.paymentId;
               estadoPagamento = 'aguardando';
               if (pagamento.pix?.qrCodeBase64) {

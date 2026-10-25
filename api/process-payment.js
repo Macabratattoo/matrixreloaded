@@ -41,7 +41,13 @@ module.exports = async function handler(req, res) {
     const dados = await resposta.json().catch(() => ({}));
     if (!resposta.ok) {
       console.error('Mercado Pago process payment:', resposta.status, dados);
-      return res.status(502).json({ error: dados.message || 'Mercado Pago recusou o pagamento' });
+      const causa = Array.isArray(dados.cause)
+        ? dados.cause.map(item => item.description || item.message || item.code).filter(Boolean).join('; ')
+        : '';
+      return res.status(502).json({
+        error: dados.message || 'Mercado Pago recusou o pagamento',
+        detail: causa || dados.error || dados.status || ''
+      });
     }
 
     const transacao = dados.point_of_interaction?.transaction_data;
