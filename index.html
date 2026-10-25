@@ -1521,32 +1521,44 @@
           callbacks: {
             onReady: () => { if (btnPix) btnPix.style.display = 'none'; },
             onSubmit: async ({ formData }) => {
-              const resposta = await fetch('/api/process-payment', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  idAgendamento: agendamentoId,
-                  paymentMethodId: formData.payment_method_id,
-                  token: formData.token,
-                  installments: formData.installments,
-                  issuerId: formData.issuer_id,
-                  idempotencyKey: `${agendamentoId}-${Date.now()}`,
-                  payer: { email: formData.payer?.email || data.emailVal, identification: formData.payer?.identification }
-                })
-              });
-              const pagamento = await resposta.json().catch(() => ({}));
-              if (!resposta.ok || !pagamento.ok) throw new Error(pagamento.detail || pagamento.error || 'Pagamento recusado');
-              paymentProcessadoId = pagamento.paymentId;
-              estadoPagamento = 'aguardando';
-              if (pagamento.pix?.qrCodeBase64) {
-                pixQrCode.src = `data:image/png;base64,${pagamento.pix.qrCodeBase64}`;
-                pixQrCode.style.display = 'block';
-                pixCopiaCola.value = pagamento.pix.qrCode || '';
-                pixResultado.style.display = 'block';
+              try {
+                const resposta = await fetch('/api/process-payment', {
+                  method: 'POST', headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    idAgendamento: agendamentoId,
+                    paymentMethodId: formData.payment_method_id,
+                    token: formData.token,
+                    installments: formData.installments,
+                    issuerId: formData.issuer_id,
+                    idempotencyKey: `${agendamentoId}-${Date.now()}`,
+                    payer: { email: formData.payer?.email || data.emailVal, identification: formData.payer?.identification }
+                  })
+                });
+                const pagamento = await resposta.json().catch(() => ({}));
+                if (!resposta.ok || !pagamento.ok) {
+                  const mensagem = pagamento.detail || pagamento.error || `Erro HTTP ${resposta.status}`;
+                  mostrarErros([`Mercado Pago: ${mensagem}`]);
+                  throw new Error(mensagem);
+                }
+                paymentProcessadoId = pagamento.paymentId;
+                estadoPagamento = 'aguardando';
+                if (pagamento.pix?.qrCodeBase64) {
+                  pixQrCode.src = `data:image/png;base64,${pagamento.pix.qrCodeBase64}`;
+                  pixQrCode.style.display = 'block';
+                  pixCopiaCola.value = pagamento.pix.qrCode || '';
+                  pixResultado.style.display = 'block';
+                }
+                if (pagamento.status === 'approved') await confirmarPagamento(paymentProcessadoId);
+                else acompanharPagamento(paymentProcessadoId);
+              } catch (erro) {
+                mostrarErros([`Mercado Pago: ${erro.message || 'não foi possível processar o pagamento'}`]);
+                throw erro;
               }
-              if (pagamento.status === 'approved') await confirmarPagamento(paymentProcessadoId);
-              else acompanharPagamento(paymentProcessadoId);
             },
-            onError: (erro) => { console.error('Payment Brick:', erro); mostrarErros(['Não foi possível carregar o pagamento.']); }
+            onError: (erro) => {
+              console.error('Payment Brick:', erro);
+              mostrarErros([`Mercado Pago: ${erro?.message || 'não foi possível carregar o pagamento'}`]);
+            }
           }
         });
       }

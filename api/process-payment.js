@@ -46,7 +46,7 @@ module.exports = async function handler(req, res) {
         : '';
       return res.status(502).json({
         error: dados.message || 'Mercado Pago recusou o pagamento',
-        detail: causa || dados.error || dados.status || ''
+        detail: causa || dados.error || dados.status || (dados.cause ? JSON.stringify(dados.cause) : '')
       });
     }
 
