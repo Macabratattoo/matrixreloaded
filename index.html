@@ -1182,7 +1182,7 @@
         try {
           const resposta = await fetch(`/api/disponibilidade?cidade=${encodeURIComponent(abaDaCidadeAtual())}&min=${min}&max=${max}`);
           const retorno = await resposta.json().catch(() => ({}));
-          if (!resposta.ok) throw new Error(retorno.error || 'Falha na disponibilidade');
+          if (!resposta.ok) throw new Error(retorno.detail || retorno.error || 'Falha na disponibilidade');
           diasIndisponiveis = new Set(retorno.indisponiveis || []);
           renderCalendario();
         } catch (erro) {

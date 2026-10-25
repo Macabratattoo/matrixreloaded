@@ -167,10 +167,19 @@ async function disponibilidade({ aba, minISO, maxISO }) {
   const calendarId = calendarioDaAba(aba);
   if (!calendarId) throw new Error(`Calendário não configurado para ${aba}`);
   const sheets = sheetsClient();
-  const [calendarDates, sheetDates] = await Promise.all([
+  const resultados = await Promise.allSettled([
     busyDatesFromCalendar(calendarId, minISO, maxISO),
     pendingDatesFromSheet(sheets, aba, minISO, maxISO)
   ]);
+  const falhas = resultados
+    .map((resultado, indice) => resultado.status === 'rejected'
+      ? `${indice === 0 ? 'Google Calendar' : 'Google Sheets'}: ${resultado.reason?.message || 'erro desconhecido'}`
+      : null)
+    .filter(Boolean);
+  if (falhas.length === resultados.length) throw new Error(falhas.join(' | '));
+  if (falhas.length) console.error('Disponibilidade parcial:', falhas.join(' | '));
+  const calendarDates = resultados[0].status === 'fulfilled' ? resultados[0].value : new Set();
+  const sheetDates = resultados[1].status === 'fulfilled' ? resultados[1].value : new Set();
   return new Set([...calendarDates, ...sheetDates]);
 }
 

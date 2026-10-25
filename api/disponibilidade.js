@@ -17,6 +17,9 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ cidade: aba, indisponiveis: [...indisponiveis].sort() });
   } catch (erro) {
     console.error(erro);
-    return res.status(500).json({ error: 'Não foi possível consultar a disponibilidade' });
+    return res.status(500).json({
+      error: 'Não foi possível consultar a disponibilidade',
+      detail: String(erro.message || '').slice(0, 500)
+    });
   }
 };
