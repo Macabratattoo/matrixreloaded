@@ -1265,8 +1265,6 @@
       const linhaConfirmado = document.getElementById('linhaConfirmado');
       const btnEnviar = document.getElementById('btnEnviar');
       const btnFlutuante = document.getElementById('btnFlutuante');
-      // TODO: trocar pelo link/Pix real do Mercado Pago quando o backend estiver pronto
-      const LINK_PIX = 'https://www.mercadopago.com.br/pagamento/link';
       const WHATSAPP_URL = 'https://wa.me/5547997772172';
       let estadoPagamento = 'pendente'; // 'pendente' | 'aguardando' | 'confirmado'
       let codigoPagamento = '';
@@ -1302,6 +1300,9 @@
         }
         if (!data.horarioVal) {
           erros.push('Escolha um horário.');
+        }
+        if (!selectedSize) {
+          erros.push('Escolha o tamanho da tatuagem.');
         }
         return erros;
       }
@@ -1439,6 +1440,7 @@
           return false;
         }
         agendamentoId = resultado.id;
+        sessionStorage.setItem('bookingContext', JSON.stringify({ id: agendamentoId, cidade: currentCity.aba }));
         return true;
       }
 
@@ -1499,7 +1501,17 @@
         try {
           const salvo = await garantirAgendamentoSalvo(data);
           if (!salvo) return;
-          window.open(LINK_PIX, '_blank', 'noopener,noreferrer');
+          const pagamentoResposta = await fetch('/api/create-payment', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idAgendamento: agendamentoId, email: data.emailVal })
+          });
+          const pagamento = await pagamentoResposta.json().catch(() => ({}));
+          if (!pagamentoResposta.ok || !pagamento.initPoint) {
+            mostrarErros([pagamento.error || 'Não foi possível gerar o pagamento.']);
+            return;
+          }
+          window.open(pagamento.initPoint, '_blank', 'noopener,noreferrer');
           estadoPagamento = 'aguardando';
           if (btnPix) {
             btnPix.textContent = '⏳ AGUARDANDO PAGAMENTO...';
@@ -1571,6 +1583,18 @@
         form.addEventListener('submit', (e) => {
           e.preventDefault();
         });
+      }
+
+      // Restaura o ID e a cidade quando o Mercado Pago retorna para o site.
+      try {
+        const contexto = JSON.parse(sessionStorage.getItem('bookingContext') || 'null');
+        if (contexto?.id) {
+          agendamentoId = contexto.id;
+          const card = Array.from(cityCards).find(item => item.dataset.aba === contexto.cidade);
+          if (card) card.click();
+        }
+      } catch (err) {
+        console.warn('Não foi possível restaurar o agendamento:', err);
       }
 
       // 6. Detecção Automática de Pagamento na Carga da Página (URL Params)

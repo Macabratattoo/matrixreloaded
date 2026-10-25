@@ -13,8 +13,8 @@ const CALENDAR_ENV_BY_ABA = {
   Camboriu: 'CALENDAR_CAMBORIU_ID'
 };
 
-const DURACAO_MINUTOS = 120;
 const FUSO = 'America/Sao_Paulo';
+const DURACOES_MINUTOS = { P: 120, M: 240, G: 360 };
 
 function normalizar(texto) {
   return String(texto || '')
@@ -41,6 +41,10 @@ function normalizarTamanho(valor) {
   return '';
 }
 
+function duracaoDoTamanho(valor) {
+  return DURACOES_MINUTOS[normalizarTamanho(valor)] || 0;
+}
+
 function parseData(valor) {
   const s = String(valor || '').trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
@@ -65,10 +69,14 @@ function parseHorario(valor) {
   return '';
 }
 
+function minutosParaHorario(minutos) {
+  const normalizado = ((minutos % 1440) + 1440) % 1440;
+  return `${String(Math.floor(normalizado / 60)).padStart(2, '0')}:${String(normalizado % 60).padStart(2, '0')}`;
+}
+
 function somarMinutos(hora, minutos) {
   const [h, m] = hora.split(':').map(Number);
-  const total = h * 60 + m + minutos;
-  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+  return minutosParaHorario(h * 60 + m + minutos);
 }
 
 function dataSeguinte(iso) {
@@ -77,16 +85,40 @@ function dataSeguinte(iso) {
   return d.toISOString().slice(0, 10);
 }
 
+function intervalosDoAgendamento(dataISO, hora, tamanho) {
+  const duracao = duracaoDoTamanho(tamanho);
+  if (!dataISO || !hora || !duracao) return null;
+  const [h, m] = hora.split(':').map(Number);
+  const inicioMinutos = h * 60 + m;
+  const finalAbsoluto = inicioMinutos + duracao;
+  const sobra = Math.max(0, finalAbsoluto - 1440);
+  const fimData = sobra > 0 ? dataSeguinte(dataISO) : dataISO;
+  const intervalos = [{
+    tipo: 'atendimento',
+    dataInicio: dataISO,
+    horaInicio: hora,
+    dataFim: fimData,
+    horaFim: minutosParaHorario(finalAbsoluto)
+  }];
+  if (sobra > 0) {
+    intervalos.push({
+      tipo: 'bloqueio_sobra',
+      dataInicio: dataSeguinte(dataISO),
+      horaInicio: '08:00',
+      dataFim: dataSeguinte(dataISO),
+      horaFim: somarMinutos('08:00', sobra)
+    });
+  }
+  return { duracao, sobra, intervalos };
+}
+
 function googleAuth(scopes) {
   const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT);
   return new google.auth.GoogleAuth({ credentials, scopes });
 }
 
 function sheetsClient() {
-  return google.sheets({
-    version: 'v4',
-    auth: googleAuth(['https://www.googleapis.com/auth/spreadsheets'])
-  });
+  return google.sheets({ version: 'v4', auth: googleAuth(['https://www.googleapis.com/auth/spreadsheets']) });
 }
 
 function calendarClient() {
@@ -121,17 +153,12 @@ async function busyDatesFromCalendar(calendarId, minISO, maxISO) {
 }
 
 async function pendingDatesFromSheet(sheets, aba, minISO, maxISO) {
-  const response = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.SHEET_ID,
-    range: `${aba}!A:T`
-  });
+  const response = await sheets.spreadsheets.values.get({ spreadsheetId: process.env.SHEET_ID, range: `${aba}!A:T` });
   const dias = new Set();
   for (const linha of response.data.values || []) {
     const status = normalizar(linha[4]);
     const data = parseData(linha[9]);
-    if (data && data >= minISO && data <= maxISO && !['cancelado', 'expirado'].includes(status)) {
-      dias.add(data);
-    }
+    if (data && data >= minISO && data <= maxISO && !['cancelado', 'expirado'].includes(status)) dias.add(data);
   }
   return dias;
 }
@@ -149,15 +176,18 @@ async function disponibilidade({ aba, minISO, maxISO }) {
 
 module.exports = {
   ABAS,
-  DURACAO_MINUTOS,
+  DURACOES_MINUTOS,
   FUSO,
   abaDaCidade,
   calendarioDaAba,
   normalizar,
   normalizarTamanho,
+  duracaoDoTamanho,
   parseData,
   parseHorario,
   somarMinutos,
+  dataSeguinte,
+  intervalosDoAgendamento,
   googleAuth,
   sheetsClient,
   calendarClient,
