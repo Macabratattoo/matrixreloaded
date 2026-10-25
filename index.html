@@ -696,6 +696,7 @@
       }
     }
   </style>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
 <body>
   <canvas id="matrix-canvas"></canvas>
@@ -839,15 +840,16 @@
           <h3 class="payment-title">PAGAMENTO DO SINAL</h3>
           <p class="payment-note">Após o pagamento do sinal, o botão ENVIAR AGENDAMENTO será liberado para você confirmar o seu horário.</p>
           <div class="form-group">
-            <button type="button" id="btnPix" class="neon payment-btn-pix">PAGAR R$50</button>
+            <button type="button" id="btnPix" class="neon payment-btn-pix">ABRIR PAGAMENTO R$50</button>
           </div>
-          <div id="areaVerificar" class="verification-area" style="display: none;">
-            <p class="verification-desc">Após pagar, o Mercado Pago vai redirecionar você de volta para cá automaticamente. Se não redirecionar, cole abaixo o código do pagamento que aparece na tela de confirmação.</p>
-            <div class="verification-row">
-              <input type="text" id="codigoPagamento" class="form-input" placeholder="Código do pagamento (ex.: 4KJfe873d)" autocomplete="off">
-              <button type="button" id="btnVerificar" class="neon btn-verificar">VERIFICAR PAGAMENTO</button>
-            </div>
+          <div id="paymentBrickContainer" style="display: none;"></div>
+          <div id="pixResultado" class="verification-area" style="display: none;">
+            <p class="verification-desc">Pix gerado. Escaneie o QR Code ou copie o código abaixo. A confirmação será automática.</p>
+            <img id="pixQrCode" alt="QR Code Pix" style="display: none; max-width: 260px; margin: 12px auto;">
+            <textarea id="pixCopiaCola" class="form-textarea" readonly rows="4" aria-label="Pix Copia e Cola"></textarea>
+            <button type="button" id="btnCopiarPix" class="neon btn-verificar">COPIAR PIX</button>
           </div>
+          <div id="areaVerificar" class="verification-area" style="display: none;"><p id="verificationDesc" class="verification-desc">Aguardando confirmação do Mercado Pago...</p></div>
           <div id="linhaConfirmado" class="linha-confirmado" style="display: none;" role="status"></div>
           <div id="erros" role="alert" aria-live="polite"></div>
           <button type="button" id="btnEnviar" class="neon btn-submit btn-desabilitado" disabled>ENVIAR AGENDAMENTO</button>
@@ -1262,6 +1264,14 @@
       const areaVerificar = document.getElementById('areaVerificar');
       const codigoPagamentoInput = document.getElementById('codigoPagamento');
       const btnVerificar = document.getElementById('btnVerificar');
+      const paymentBrickContainer = document.getElementById('paymentBrickContainer');
+      const pixResultado = document.getElementById('pixResultado');
+      const pixQrCode = document.getElementById('pixQrCode');
+      const pixCopiaCola = document.getElementById('pixCopiaCola');
+      const btnCopiarPix = document.getElementById('btnCopiarPix');
+      const MP_PUBLIC_KEY = 'APP_USR-a836e06e-42a7-4e18-9703-9291ebd387d4';
+      let paymentBrickController = null;
+      let paymentProcessadoId = null;
       const linhaConfirmado = document.getElementById('linhaConfirmado');
       const btnEnviar = document.getElementById('btnEnviar');
       const btnFlutuante = document.getElementById('btnFlutuante');
@@ -1444,85 +1454,115 @@
         return true;
       }
 
-      async function confirmarPagamento(codigo) {
+      async function confirmarPagamento(codigo, silencioso = false) {
         if (!agendamentoId || !currentCity) {
           mostrarErros(['Salve o agendamento antes de confirmar o pagamento.']);
           return false;
         }
-        if (processando) return false;
-        processando = true;
         try {
           const resposta = await fetch('/api/confirmar-agendamento', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idAgendamento: agendamentoId, paymentId: codigo, cidade: currentCity.aba })
           });
           const retorno = await resposta.json().catch(() => ({}));
           if (!resposta.ok || !retorno.ok) {
-            mostrarErros([retorno.error || 'Pagamento ainda não aprovado.']);
+            if (!silencioso) mostrarErros([retorno.error || 'Pagamento ainda não aprovado.']);
             return false;
           }
-          estadoPagamento = 'confirmado';
-          codigoPagamento = codigo;
+          estadoPagamento = 'confirmado'; codigoPagamento = codigo;
+          if (paymentBrickController) paymentBrickController.unmount();
+          if (paymentBrickContainer) paymentBrickContainer.style.display = 'none';
+          if (pixResultado) pixResultado.style.display = 'none';
           if (areaVerificar) areaVerificar.style.display = 'none';
           if (linhaConfirmado) {
-            linhaConfirmado.textContent = `✅ Pagamento confirmado e horário criado na agenda — código ${codigoPagamento}`;
+            linhaConfirmado.textContent = '✅ Pagamento confirmado e horário criado na agenda.';
             linhaConfirmado.style.display = 'block';
           }
-          if (btnPix) {
-            btnPix.textContent = '✅ SINAL PAGO';
-            btnPix.classList.add('btn-desabilitado');
-            btnPix.disabled = true;
-          }
-          if (btnEnviar) {
-            btnEnviar.disabled = false;
-            btnEnviar.classList.remove('btn-desabilitado');
-          }
+          if (btnPix) { btnPix.textContent = '✅ SINAL PAGO'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
+          if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.classList.remove('btn-desabilitado'); }
           atualizarBotaoFlutuante();
           return true;
-        } finally {
-          processando = false;
+        } catch (erro) {
+          if (!silencioso) mostrarErros(['Falha ao confirmar pagamento.']);
+          return false;
         }
       }
 
-      async function iniciarPagamento() {
-        if (processando) return;
-        if (estadoPagamento === 'confirmado') return;
-        if (estadoPagamento === 'aguardando') {
-          if (areaVerificar) areaVerificar.style.display = 'flex';
-          if (codigoPagamentoInput) codigoPagamentoInput.focus();
-          return;
+      async function acompanharPagamento(paymentId) {
+        const inicio = Date.now();
+        const limite = 30 * 60 * 1000;
+        while (Date.now() - inicio < limite && estadoPagamento !== 'confirmado') {
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          try {
+            const resposta = await fetch(`/api/payment-status?id=${encodeURIComponent(paymentId)}`);
+            const status = await resposta.json();
+            if (status.status === 'approved') {
+              await confirmarPagamento(paymentId, true);
+              break;
+            }
+            if (status.status === 'rejected' || status.status === 'cancelled') {
+              mostrarErros(['O Mercado Pago recusou ou cancelou o pagamento.']);
+              break;
+            }
+          } catch (erro) { console.warn('Aguardando status do pagamento:', erro); }
         }
+      }
+
+      async function iniciarPaymentBrick(data) {
+        if (!window.MercadoPago) throw new Error('SDK do Mercado Pago não carregou');
+        if (paymentBrickController) paymentBrickController.unmount();
+        paymentBrickContainer.innerHTML = '';
+        paymentBrickContainer.style.display = 'block';
+        const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
+        const bricksBuilder = mp.bricks();
+        paymentBrickController = await bricksBuilder.create('payment', 'paymentBrickContainer', {
+          initialization: { amount: 50, payer: { email: data.emailVal } },
+          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', bankTransfer: 'all', mercadoPago: 'all' } },
+          callbacks: {
+            onReady: () => { if (btnPix) btnPix.style.display = 'none'; },
+            onSubmit: async ({ formData }) => {
+              const resposta = await fetch('/api/process-payment', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  idAgendamento: agendamentoId,
+                  paymentMethodId: formData.payment_method_id,
+                  token: formData.token,
+                  installments: formData.installments,
+                  issuerId: formData.issuer_id,
+                  payer: { email: formData.payer?.email || data.emailVal, identification: formData.payer?.identification }
+                })
+              });
+              const pagamento = await resposta.json().catch(() => ({}));
+              if (!resposta.ok || !pagamento.ok) throw new Error(pagamento.error || 'Pagamento recusado');
+              paymentProcessadoId = pagamento.paymentId;
+              estadoPagamento = 'aguardando';
+              if (pagamento.pix?.qrCodeBase64) {
+                pixQrCode.src = `data:image/png;base64,${pagamento.pix.qrCodeBase64}`;
+                pixQrCode.style.display = 'block';
+                pixCopiaCola.value = pagamento.pix.qrCode || '';
+                pixResultado.style.display = 'block';
+              }
+              if (pagamento.status === 'approved') await confirmarPagamento(paymentProcessadoId);
+              else acompanharPagamento(paymentProcessadoId);
+            },
+            onError: (erro) => { console.error('Payment Brick:', erro); mostrarErros(['Não foi possível carregar o pagamento.']); }
+          }
+        });
+      }
+
+      async function iniciarPagamento() {
+        if (processando || estadoPagamento === 'confirmado') return;
         const data = getFormData();
         const erros = validateFormData(data);
         mostrarErros(erros);
         if (erros.length > 0) return;
         processando = true;
         try {
-          const salvo = await garantirAgendamentoSalvo(data);
-          if (!salvo) return;
-          const pagamentoResposta = await fetch('/api/create-payment', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idAgendamento: agendamentoId, email: data.emailVal })
-          });
-          const pagamento = await pagamentoResposta.json().catch(() => ({}));
-          if (!pagamentoResposta.ok || !pagamento.initPoint) {
-            mostrarErros([pagamento.error || 'Não foi possível gerar o pagamento.']);
-            return;
-          }
-          window.open(pagamento.initPoint, '_blank', 'noopener,noreferrer');
-          estadoPagamento = 'aguardando';
-          if (btnPix) {
-            btnPix.textContent = '⏳ AGUARDANDO PAGAMENTO...';
-            btnPix.classList.add('btn-desabilitado');
-            btnPix.disabled = true;
-          }
-          if (areaVerificar) areaVerificar.style.display = 'flex';
-          atualizarBotaoFlutuante();
-        } finally {
-          processando = false;
-        }
+          if (!await garantirAgendamentoSalvo(data)) return;
+          await iniciarPaymentBrick(data);
+        } catch (erro) {
+          console.error(erro); mostrarErros([erro.message || 'Não foi possível abrir o pagamento.']);
+        } finally { processando = false; }
       }
 
       function abrirWhatsApp() {
@@ -1548,15 +1588,12 @@
         btnPix.addEventListener('click', iniciarPagamento);
       }
 
-      // Botão "VERIFICAR PAGAMENTO"
-      if (btnVerificar) {
-        btnVerificar.addEventListener('click', async () => {
-          const valor = (codigoPagamentoInput?.value || '').trim();
-          if (valor) {
-            await confirmarPagamento(valor);
-          } else if (codigoPagamentoInput) {
-            codigoPagamentoInput.focus();
-          }
+
+      if (btnCopiarPix) {
+        btnCopiarPix.addEventListener('click', async () => {
+          await navigator.clipboard.writeText(pixCopiaCola.value);
+          btnCopiarPix.textContent = 'COPIADO';
+          setTimeout(() => { btnCopiarPix.textContent = 'COPIAR PIX'; }, 1800);
         });
       }
 
