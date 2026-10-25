@@ -810,13 +810,13 @@
           <div class="form-group">
             <label class="form-label">Tamanho / Complexidade</label>
             <div class="size-cards-grid" role="radiogroup" aria-label="Tamanho e complexidade">
-              <button type="button" class="neon size-card" data-size-desc="Pequena até 6 cm" role="radio" aria-checked="false">
+              <button type="button" class="neon size-card" data-size-code="P" data-size-desc="Pequena até 6 cm" role="radio" aria-checked="false">
                 <span class="size-card-desc">Pequena até 6 cm</span>
               </button>
-              <button type="button" class="neon size-card" data-size-desc="Média até 12 cm ou pequena e complexa" role="radio" aria-checked="false">
+              <button type="button" class="neon size-card" data-size-code="M" data-size-desc="Média até 12 cm ou pequena e complexa" role="radio" aria-checked="false">
                 <span class="size-card-desc">Média até 12 cm ou pequena e complexa</span>
               </button>
-              <button type="button" class="neon size-card" data-size-desc="Grande acima de 12 cm ou média e complexa" role="radio" aria-checked="false">
+              <button type="button" class="neon size-card" data-size-code="G" data-size-desc="Grande acima de 12 cm ou média e complexa" role="radio" aria-checked="false">
                 <span class="size-card-desc">Grande acima de 12 cm ou média e complexa</span>
               </button>
             </div>
@@ -1099,6 +1099,8 @@
       let calMaxKey = 0;
       let calViewYear = 0;
       let calViewMonth = 0;
+      let diasIndisponiveis = new Set();
+      let carregandoDisponibilidade = false;
 
       function toISO(dt) {
         return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
@@ -1129,8 +1131,12 @@
           btn.className = 'cal-dia';
           btn.textContent = dia;
           btn.setAttribute('aria-label', `${dia} de ${MESES[calViewMonth]}`);
-          if (iso < calMinISO || iso > calMaxISO) {
+          if (iso < calMinISO || iso > calMaxISO || diasIndisponiveis.has(iso)) {
             btn.disabled = true;
+            if (diasIndisponiveis.has(iso)) {
+              btn.classList.add('cal-indisponivel');
+              btn.title = 'Dia indisponível';
+            }
           }
           if (iso === hoje) {
             btn.classList.add('cal-hoje');
@@ -1156,8 +1162,9 @@
         renderCalendario();
       }
 
-      function configurarCalendario(min, max) {
+      async function configurarCalendario(min, max) {
         calMinISO = min;
+        diasIndisponiveis = new Set();
         calMaxISO = max;
         const inicio = parseISO(min);
         const fim = parseISO(max);
@@ -1171,6 +1178,25 @@
         calAviso.style.display = 'none';
         calendarioEl.style.display = 'block';
         renderCalendario();
+        carregandoDisponibilidade = true;
+        try {
+          const resposta = await fetch(`/api/disponibilidade?cidade=${encodeURIComponent(abaDaCidadeAtual())}&min=${min}&max=${max}`);
+          const retorno = await resposta.json().catch(() => ({}));
+          if (!resposta.ok) throw new Error(retorno.error || 'Falha na disponibilidade');
+          diasIndisponiveis = new Set(retorno.indisponiveis || []);
+          renderCalendario();
+        } catch (erro) {
+          console.error('Falha ao consultar disponibilidade:', erro);
+          calAviso.textContent = 'Não foi possível consultar os dias disponíveis. Tente novamente.';
+          calAviso.style.display = 'block';
+          calendarioEl.style.display = 'none';
+        } finally {
+          carregandoDisponibilidade = false;
+        }
+      }
+
+      function abaDaCidadeAtual() {
+        return currentCity ? currentCity.aba : '';
       }
 
       calPrev.addEventListener('click', () => mudarMes(-1));
@@ -1216,7 +1242,7 @@
           card.classList.add('is-active');
           card.setAttribute('aria-checked', 'true');
           const desc = card.dataset.sizeDesc || '';
-          selectedSize = { desc };
+          selectedSize = { desc, code: card.dataset.sizeCode || '' };
           if (precoTamanho) {
             const textoPreco = tabelaPrecos[desc];
             if (textoPreco) {
@@ -1393,7 +1419,7 @@
             data: data.dataVal,
             horario: data.horarioVal,
             tatuagem: data.tatuagemVal,
-            tamanho: selectedSize ? selectedSize.desc : '',
+            tamanho: selectedSize ? selectedSize.code : '',
             duvidas: data.duvidasVal,
             recomendacao: data.recomendacaoVal,
             fotos: fotos
@@ -1416,28 +1442,45 @@
         return true;
       }
 
-      function confirmarPagamento(codigo) {
-        estadoPagamento = 'confirmado';
-        if (codigo) {
+      async function confirmarPagamento(codigo) {
+        if (!agendamentoId || !currentCity) {
+          mostrarErros(['Salve o agendamento antes de confirmar o pagamento.']);
+          return false;
+        }
+        if (processando) return false;
+        processando = true;
+        try {
+          const resposta = await fetch('/api/confirmar-agendamento', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idAgendamento: agendamentoId, paymentId: codigo, cidade: currentCity.aba })
+          });
+          const retorno = await resposta.json().catch(() => ({}));
+          if (!resposta.ok || !retorno.ok) {
+            mostrarErros([retorno.error || 'Pagamento ainda não aprovado.']);
+            return false;
+          }
+          estadoPagamento = 'confirmado';
           codigoPagamento = codigo;
+          if (areaVerificar) areaVerificar.style.display = 'none';
+          if (linhaConfirmado) {
+            linhaConfirmado.textContent = `✅ Pagamento confirmado e horário criado na agenda — código ${codigoPagamento}`;
+            linhaConfirmado.style.display = 'block';
+          }
+          if (btnPix) {
+            btnPix.textContent = '✅ SINAL PAGO';
+            btnPix.classList.add('btn-desabilitado');
+            btnPix.disabled = true;
+          }
+          if (btnEnviar) {
+            btnEnviar.disabled = false;
+            btnEnviar.classList.remove('btn-desabilitado');
+          }
+          atualizarBotaoFlutuante();
+          return true;
+        } finally {
+          processando = false;
         }
-        if (areaVerificar) {
-          areaVerificar.style.display = 'none';
-        }
-        if (linhaConfirmado) {
-          linhaConfirmado.textContent = `✅ Pagamento confirmado — código ${codigoPagamento}`;
-          linhaConfirmado.style.display = 'block';
-        }
-        if (btnPix) {
-          btnPix.textContent = '✅ SINAL PAGO';
-          btnPix.classList.add('btn-desabilitado');
-          btnPix.disabled = true;
-        }
-        if (btnEnviar) {
-          btnEnviar.disabled = false;
-          btnEnviar.classList.remove('btn-desabilitado');
-        }
-        atualizarBotaoFlutuante();
       }
 
       async function iniciarPagamento() {
@@ -1495,10 +1538,10 @@
 
       // Botão "VERIFICAR PAGAMENTO"
       if (btnVerificar) {
-        btnVerificar.addEventListener('click', () => {
+        btnVerificar.addEventListener('click', async () => {
           const valor = (codigoPagamentoInput?.value || '').trim();
           if (valor) {
-            confirmarPagamento(valor);
+            await confirmarPagamento(valor);
           } else if (codigoPagamentoInput) {
             codigoPagamentoInput.focus();
           }
@@ -1540,11 +1583,9 @@
           urlParams.has('external_reference');
         if (hasPaymentParam) {
           let detectedCode = urlParams.get('payment_id') || urlParams.get('collection_id');
-          if (!detectedCode) {
-            const randChars = Math.random().toString(36).substring(2, 8).toUpperCase();
-            detectedCode = 'BB-' + randChars;
+          if (detectedCode) {
+            confirmarPagamento(detectedCode);
           }
-          confirmarPagamento(detectedCode);
         }
       } catch (err) {
         // Fallback seguro silencioso
