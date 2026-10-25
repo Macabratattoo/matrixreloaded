@@ -11,7 +11,7 @@ function siteUrl(req) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
   try {
-    const { idAgendamento, paymentMethodId, token, installments, issuerId, payer } = req.body || {};
+    const { idAgendamento, paymentMethodId, token, installments, issuerId, idempotencyKey, payer } = req.body || {};
     if (!idAgendamento || !paymentMethodId || !payer?.email) {
       return res.status(400).json({ error: 'Dados de pagamento incompletos' });
     }
@@ -22,7 +22,7 @@ module.exports = async function handler(req, res) {
       description: 'Sinal de agendamento de tatuagem',
       external_reference: idAgendamento,
       payment_method_id: paymentMethodId,
-      payer: { email: payer.email, identification: payer.identification }
+      payer: { email: payer.email, identification: payer.identification, entity_type: 'individual' }
     };
     if (token) pagamento.token = token;
     if (installments) pagamento.installments = Number(installments);
@@ -34,7 +34,7 @@ module.exports = async function handler(req, res) {
       headers: {
         Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
-        'X-Idempotency-Key': `${idAgendamento}-payment`
+        'X-Idempotency-Key': String(idempotencyKey || `${idAgendamento}-${Date.now()}`)
       },
       body: JSON.stringify(pagamento)
     });
