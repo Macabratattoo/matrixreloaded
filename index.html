@@ -1551,6 +1551,30 @@
         }
       }
 
+      function liberarPagamentoParaNovaTentativa() {
+        estadoPagamento = 'pendente';
+        codigoPagamento = '';
+        paymentProcessadoId = null;
+        pixOrderId = null;
+        if (pixResultado) pixResultado.style.display = 'none';
+        if (pixQrCode) {
+          pixQrCode.removeAttribute('src');
+          pixQrCode.style.display = 'none';
+        }
+        if (pixCopiaCola) pixCopiaCola.value = '';
+        if (btnPix) {
+          btnPix.textContent = 'PAGAR COM PIX R$50';
+          btnPix.disabled = false;
+          btnPix.classList.remove('btn-desabilitado');
+        }
+        if (btnCartao) {
+          btnCartao.disabled = false;
+          btnCartao.classList.remove('btn-desabilitado');
+        }
+        if (paymentBrickController && paymentBrickContainer) paymentBrickContainer.style.display = 'block';
+        atualizarBotaoFlutuante();
+      }
+
       async function acompanharPagamento(paymentId, tipo = 'payment') {
         const inicio = Date.now();
         const limite = 30 * 60 * 1000;
@@ -1564,6 +1588,7 @@
               break;
             }
             if (status.status === 'rejected' || status.status === 'cancelled') {
+              liberarPagamentoParaNovaTentativa();
               mostrarErros(['O Mercado Pago recusou ou cancelou o pagamento.']);
               break;
             }
@@ -1606,6 +1631,10 @@
                 }
                 paymentProcessadoId = pagamento.paymentId;
                 estadoPagamento = 'aguardando';
+                if (btnPix) {
+                  btnPix.disabled = true;
+                  btnPix.classList.add('btn-desabilitado');
+                }
                 if (pagamento.pix?.qrCodeBase64) {
                   pixQrCode.src = `data:image/png;base64,${pagamento.pix.qrCodeBase64}`;
                   pixQrCode.style.display = 'block';
@@ -1668,6 +1697,7 @@
           pixCopiaCola.value = order.pix?.qrCode || '';
           pixResultado.style.display = 'block';
           if (btnPix) { btnPix.textContent = '⏳ AGUARDANDO PIX'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
+          if (paymentBrickContainer) paymentBrickContainer.style.display = 'none';
           acompanharPagamento(pixOrderId, 'order');
         } catch (erro) {
           console.error('Pix Orders API:', erro);

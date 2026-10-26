@@ -33,11 +33,12 @@ module.exports = async function handler(req, res) {
       if (!respMp.ok) return res.status(400).json({ error: 'Pagamento não encontrado' });
       pagamento = await respMp.json();
     }
+    const valorPagamento = Number(pagamento.transaction_amount);
     const aprovado = orderId ? ['processed', 'approved', 'accredited'].includes(pagamento.status) : pagamento.status === 'approved';
-    if (!aprovado || Number(pagamento.transaction_amount) < VALOR_SINAL) {
+    if (!aprovado || !Number.isFinite(valorPagamento) || valorPagamento < VALOR_SINAL) {
       return res.status(402).json({ error: 'Pagamento ainda não aprovado' });
     }
-    if (pagamento.external_reference && pagamento.external_reference !== idAgendamento) {
+    if (pagamento.external_reference !== idAgendamento) {
       return res.status(400).json({ error: 'Pagamento não corresponde ao agendamento' });
     }
 
