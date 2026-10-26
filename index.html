@@ -1516,8 +1516,8 @@
         const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
         const bricksBuilder = mp.bricks();
         paymentBrickController = await bricksBuilder.create('payment', 'paymentBrickContainer', {
-          initialization: { amount: 50, payer: { email: data.emailVal, entityType: 'individual' } },
-          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', bankTransfer: 'all' } },
+          initialization: { amount: 50, payer: { email: data.emailVal } },
+          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', ticket: 'all', bankTransfer: 'all' } },
           callbacks: {
             onReady: () => { if (btnPix) btnPix.style.display = 'none'; },
             onSubmit: async ({ formData }) => {
@@ -1526,11 +1526,8 @@
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     idAgendamento: agendamentoId,
-                    paymentMethodId: formData.payment_method_id,
-                    token: formData.token,
-                    installments: formData.installments,
-                    issuerId: formData.issuer_id,
                     idempotencyKey: `${agendamentoId}-${Date.now()}`,
+                    formData,
                     payer: { email: formData.payer?.email || data.emailVal, identification: formData.payer?.identification }
                   })
                 });

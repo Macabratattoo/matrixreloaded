@@ -11,7 +11,12 @@ function siteUrl(req) {
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
   try {
-    const { idAgendamento, paymentMethodId, token, installments, issuerId, idempotencyKey, payer } = req.body || {};
+    const { idAgendamento, idempotencyKey, formData = {}, payer: payerInput } = req.body || {};
+    const paymentMethodId = req.body?.paymentMethodId || formData.payment_method_id;
+    const token = req.body?.token || formData.token;
+    const installments = req.body?.installments || formData.installments;
+    const issuerId = req.body?.issuerId || formData.issuer_id;
+    const payer = payerInput || formData.payer;
     if (!idAgendamento || !paymentMethodId || !payer?.email) {
       return res.status(400).json({ error: 'Dados de pagamento incompletos' });
     }
@@ -22,7 +27,7 @@ module.exports = async function handler(req, res) {
       description: 'Sinal de agendamento de tatuagem',
       external_reference: idAgendamento,
       payment_method_id: paymentMethodId,
-      payer: { email: payer.email, identification: payer.identification, entity_type: 'individual' }
+      payer: { email: payer.email, identification: payer.identification }
     };
     if (token) pagamento.token = token;
     if (installments) pagamento.installments = Number(installments);
