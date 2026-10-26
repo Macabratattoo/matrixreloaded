@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
     }
     const valorPagamento = Number(pagamento.transaction_amount);
     const aprovado = orderId ? ['processed', 'approved', 'accredited'].includes(pagamento.status) : pagamento.status === 'approved';
-    if (!aprovado || !Number.isFinite(valorPagamento) || valorPagamento < VALOR_SINAL) {
+    if (!aprovado || !Number.isFinite(valorPagamento) || Math.round(valorPagamento * 100) !== VALOR_SINAL * 100) {
       return res.status(402).json({ error: 'Pagamento ainda não aprovado' });
     }
     if (pagamento.external_reference !== idAgendamento) {

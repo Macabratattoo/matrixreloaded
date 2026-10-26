@@ -2,6 +2,7 @@
   "name": "matrixreloaded",
   "version": "1.0.0",
   "dependencies": {
-    "googleapis": "^140.0.0"
+    "googleapis": "^140.0.0",
+    "mercadopago": "^3.6.1"
   }
 }

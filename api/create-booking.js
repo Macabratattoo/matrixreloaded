@@ -9,6 +9,7 @@ const {
   intervalosDoAgendamento,
   intervaloComoDatas,
   intervalosConflitam,
+  agendamentoAtivo,
   disponibilidadeDetalhada,
   FUSO
 } = require('./_booking-utils');
@@ -31,8 +32,7 @@ module.exports = async function handler(req, res) {
     const linhas = leitura.data.values || [];
     const reservasPlanilha = [];
     for (const linha of linhas) {
-      const status = String(linha[4] || '').toLowerCase();
-      if (status !== 'confirmado') continue;
+      if (!agendamentoAtivo(linha)) continue;
       const reserva = intervalosDoAgendamento(parseData(linha[9]), parseHorario(linha[10]), linha[11]);
       if (reserva) reservasPlanilha.push(...reserva.intervalos.map(intervaloComoDatas));
     }

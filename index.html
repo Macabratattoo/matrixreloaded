@@ -838,7 +838,7 @@
           </div>
           <hr class="neon-hr">
           <h3 class="payment-title">PAGAMENTO DO SINAL</h3>
-          <p class="payment-note">O agendamento só será confirmado após a aprovação real do pagamento pelo Mercado Pago.</p>
+          <p class="payment-note">O agendamento só será confirmado após a aprovação real do pagamento pelo Mercado Pago. O Pix expira em 35 minutos; enquanto estiver válido, o horário fica reservado.</p>
           <div class="form-group">
             <button type="button" id="btnPix" class="neon payment-btn-pix">PAGAR COM PIX R$50</button>
             <button type="button" id="btnCartao" class="neon payment-btn-pix" style="margin-top: 10px;">PAGAR COM CARTÃO R$50</button>
@@ -1313,7 +1313,7 @@
       const MP_PUBLIC_KEY = 'APP_USR-a836e06e-42a7-4e18-9703-9291ebd387d4';
       let paymentBrickController = null;
       let paymentProcessadoId = null;
-      let pixOrderId = null;
+      let cartaoIdempotencyKey = null;
       const linhaConfirmado = document.getElementById('linhaConfirmado');
       const btnEnviar = document.getElementById('btnEnviar');
       const btnFlutuante = document.getElementById('btnFlutuante');
@@ -1555,7 +1555,7 @@
         estadoPagamento = 'pendente';
         codigoPagamento = '';
         paymentProcessadoId = null;
-        pixOrderId = null;
+        cartaoIdempotencyKey = null;
         if (pixResultado) pixResultado.style.display = 'none';
         if (pixQrCode) {
           pixQrCode.removeAttribute('src');
@@ -1575,16 +1575,16 @@
         atualizarBotaoFlutuante();
       }
 
-      async function acompanharPagamento(paymentId, tipo = 'payment') {
+      async function acompanharPagamento(paymentId) {
         const inicio = Date.now();
-        const limite = 30 * 60 * 1000;
+        const limite = 35 * 60 * 1000;
         while (Date.now() - inicio < limite && estadoPagamento !== 'confirmado') {
           await new Promise(resolve => setTimeout(resolve, 5000));
           try {
-            const resposta = await fetch(`/${tipo === 'order' ? 'api/order-status' : 'api/payment-status'}?id=${encodeURIComponent(paymentId)}`);
+            const resposta = await fetch(`/api/status-pagamento?id=${encodeURIComponent(paymentId)}&agendamento=${encodeURIComponent(agendamentoId)}`);
             const status = await resposta.json();
             if (status.status === 'approved') {
-              await confirmarPagamento(paymentId, true, tipo);
+              await confirmarPagamento(paymentId, true);
               break;
             }
             if (status.status === 'rejected' || status.status === 'cancelled') {
@@ -1593,6 +1593,10 @@
               break;
             }
           } catch (erro) { console.warn('Aguardando status do pagamento:', erro); }
+        }
+        if (estadoPagamento === 'aguardando') {
+          liberarPagamentoParaNovaTentativa();
+          mostrarErros(['O prazo de confirmação terminou. Se o Pix expirou, escolha o horário novamente para gerar outro.']);
         }
       }
 
@@ -1614,7 +1618,7 @@
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     idAgendamento: agendamentoId,
-                    idempotencyKey: `${agendamentoId}-${Date.now()}`,
+                    idempotencyKey: cartaoIdempotencyKey || (cartaoIdempotencyKey = `${agendamentoId}-cartao-${window.crypto?.randomUUID?.() || Date.now()}`),
                     formData,
                     payer: {
                       email: formData.payer?.email || data.emailVal,
@@ -1680,27 +1684,26 @@
         processando = true;
         try {
           if (!await garantirAgendamentoSalvo(data)) return;
-          const resposta = await fetch('/api/create-pix-order', {
+          const resposta = await fetch('/api/create-pix-payment', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idAgendamento: agendamentoId, email: data.emailVal })
+            body: JSON.stringify({ idAgendamento: agendamentoId })
           });
-          const order = await resposta.json().catch(() => ({}));
-          if (!resposta.ok || !order.ok) throw new Error(order.detail || order.error || `Erro HTTP ${resposta.status}`);
-          pixOrderId = order.orderId;
-          paymentProcessadoId = order.paymentId;
+          const pagamentoPix = await resposta.json().catch(() => ({}));
+          if (!resposta.ok || !pagamentoPix.ok) throw new Error(pagamentoPix.detail || pagamentoPix.error || `Erro HTTP ${resposta.status}`);
+          paymentProcessadoId = pagamentoPix.paymentId;
           estadoPagamento = 'aguardando';
-          if (order.pix?.qrCodeBase64) {
-            pixQrCode.src = `data:image/png;base64,${order.pix.qrCodeBase64}`;
+          if (pagamentoPix.pix?.qrCodeBase64) {
+            pixQrCode.src = `data:image/png;base64,${pagamentoPix.pix.qrCodeBase64}`;
             pixQrCode.style.display = 'block';
           }
-          pixCopiaCola.value = order.pix?.qrCode || '';
+          pixCopiaCola.value = pagamentoPix.pix?.qrCode || '';
           pixResultado.style.display = 'block';
           if (btnPix) { btnPix.textContent = '⏳ AGUARDANDO PIX'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
           if (paymentBrickContainer) paymentBrickContainer.style.display = 'none';
-          acompanharPagamento(pixOrderId, 'order');
+          acompanharPagamento(paymentProcessadoId);
         } catch (erro) {
-          console.error('Pix Orders API:', erro);
+          console.error('Pix API:', erro);
           mostrarErros([`Mercado Pago: ${erro.message || 'não foi possível criar o Pix'}`]);
         } finally { processando = false; }
       }

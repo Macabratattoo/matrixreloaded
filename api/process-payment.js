@@ -44,7 +44,7 @@ module.exports = async function handler(req, res) {
     if (token) pagamento.token = token;
     if (installments) pagamento.installments = Number(installments);
     if (issuerId) pagamento.issuer_id = String(issuerId);
-    pagamento.notification_url = `${siteUrl(req)}/api/mercadopago-webhook`;
+    pagamento.notification_url = `${siteUrl(req)}/api/mp-webhook`;
 
     const resposta = await fetch('https://api.mercadopago.com/v1/payments', {
       method: 'POST',
