@@ -1749,23 +1749,6 @@
         console.warn('Não foi possível restaurar o agendamento:', err);
       }
 
-      // 6. Detecção Automática de Pagamento na Carga da Página (URL Params)
-      try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const statusVal = urlParams.get('status');
-        const hasPaymentParam = statusVal === 'approved' ||
-          urlParams.has('payment_id') ||
-          urlParams.has('collection_id') ||
-          urlParams.has('external_reference');
-        if (hasPaymentParam) {
-          let detectedCode = urlParams.get('payment_id') || urlParams.get('collection_id');
-          if (detectedCode) {
-            confirmarPagamento(detectedCode);
-          }
-        }
-      } catch (err) {
-        // Fallback seguro silencioso
-      }
     });
   </script>
 </body>
