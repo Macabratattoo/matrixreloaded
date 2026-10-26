@@ -1088,6 +1088,7 @@
 
       // 3b. Calendário sempre aberto (sem campo de digitação)
       const dataInput = document.getElementById('data'); // campo oculto com o valor AAAA-MM-DD
+      const horarioInput = document.getElementById('horario');
       const calendarioEl = document.getElementById('calendarioData');
       const calAviso = document.getElementById('calAviso');
       const calTitulo = document.getElementById('calTitulo');
@@ -1102,6 +1103,7 @@
       let calViewYear = 0;
       let calViewMonth = 0;
       let diasIndisponiveis = new Set();
+      let intervalosOcupados = [];
       let carregandoDisponibilidade = false;
 
       function toISO(dt) {
@@ -1113,6 +1115,42 @@
       }
       function chaveMes(ano, mes) {
         return ano * 12 + mes;
+      }
+
+      function intervalosDaEscolha(dataISO, hora, tamanho) {
+        const duracoes = { P: 120, M: 240, G: 360 };
+        const duracao = duracoes[tamanho];
+        if (!dataISO || !hora || !duracao) return [];
+        const inicio = new Date(`${dataISO}T${hora}:00-03:00`);
+        const fim = new Date(inicio.getTime() + duracao * 60000);
+        const inicioMin = Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3));
+        const sobra = Math.max(0, inicioMin + duracao - 1440);
+        const intervalos = [{ start: inicio, end: fim }];
+        if (sobra > 0) {
+          const diaSeguinte = new Date(`${dataISO}T12:00:00-03:00`);
+          diaSeguinte.setDate(diaSeguinte.getDate() + 1);
+          const dataSeguinte = `${diaSeguinte.getFullYear()}-${String(diaSeguinte.getMonth() + 1).padStart(2, '0')}-${String(diaSeguinte.getDate()).padStart(2, '0')}`;
+          intervalos.push({ start: new Date(`${dataSeguinte}T08:00:00-03:00`), end: new Date(new Date(`${dataSeguinte}T08:00:00-03:00`).getTime() + sobra * 60000) });
+        }
+        return intervalos;
+      }
+
+      function horarioConflita(dataISO, hora) {
+        if (!selectedSize?.code) return false;
+        return intervalosDaEscolha(dataISO, hora, selectedSize.code).some(escolhido =>
+          intervalosOcupados.some(ocupado => escolhido.start < new Date(ocupado.end) && escolhido.end > new Date(ocupado.start))
+        );
+      }
+
+      function atualizarHorariosDisponiveis() {
+        if (!horarioInput) return;
+        Array.from(horarioInput.options).forEach(option => {
+          if (!option.value) return;
+          const bloqueado = Boolean(dataInput.value && selectedSize?.code && horarioConflita(dataInput.value, option.value));
+          option.disabled = bloqueado;
+          option.title = bloqueado ? 'Conflita com outro agendamento' : '';
+        });
+        if (horarioInput.selectedOptions[0]?.disabled) horarioInput.value = '';
       }
 
       function renderCalendario() {
@@ -1148,6 +1186,7 @@
           }
           btn.addEventListener('click', () => {
             dataInput.value = iso;
+            atualizarHorariosDisponiveis();
             renderCalendario();
           });
           calGrid.appendChild(btn);
@@ -1167,6 +1206,7 @@
       async function configurarCalendario(min, max) {
         calMinISO = min;
         diasIndisponiveis = new Set();
+        intervalosOcupados = [];
         calMaxISO = max;
         const inicio = parseISO(min);
         const fim = parseISO(max);
@@ -1186,7 +1226,9 @@
           const retorno = await resposta.json().catch(() => ({}));
           if (!resposta.ok) throw new Error(retorno.detail || retorno.error || 'Falha na disponibilidade');
           diasIndisponiveis = new Set(retorno.indisponiveis || []);
+          intervalosOcupados = Array.isArray(retorno.ocupados) ? retorno.ocupados : [];
           renderCalendario();
+          atualizarHorariosDisponiveis();
         } catch (erro) {
           console.error('Falha ao consultar disponibilidade:', erro);
           calAviso.textContent = 'Não foi possível consultar os dias disponíveis. Tente novamente.';
@@ -1245,6 +1287,7 @@
           card.setAttribute('aria-checked', 'true');
           const desc = card.dataset.sizeDesc || '';
           selectedSize = { desc, code: card.dataset.sizeCode || '' };
+          atualizarHorariosDisponiveis();
           if (precoTamanho) {
             const textoPreco = tabelaPrecos[desc];
             if (textoPreco) {
@@ -1278,6 +1321,7 @@
       const WHATSAPP_URL = 'https://wa.me/5547997772172';
       let estadoPagamento = 'pendente'; // 'pendente' | 'aguardando' | 'confirmado'
       let codigoPagamento = '';
+      let fotosPendentes = [];
       let agendamentoId = null;
       let processando = false;
 
@@ -1415,9 +1459,10 @@
       return fotos;
     }
       // Grava o agendamento na planilha com status "aguardando_pagamento"
-     // Grava o agendamento na planilha com status "aguardando_pagamento" e envia as fotos ao Drive
+     // Grava somente o agendamento na planilha; as fotos ficam em memória até o pagamento aprovado.
       async function salvarNaPlanilha(data) {
         const fotos = await prepararFotos(data.fotosInput);
+        fotosPendentes = fotos;
       
         const resposta = await fetch('/api/create-booking', {
           method: 'POST',
@@ -1432,13 +1477,31 @@
             tatuagem: data.tatuagemVal,
             tamanho: selectedSize ? selectedSize.code : '',
             duvidas: data.duvidasVal,
-            recomendacao: data.recomendacaoVal,
-            fotos: fotos
+            recomendacao: data.recomendacaoVal
           })
         });
       
         const retorno = await resposta.json().catch(() => ({}));
         return { ok: resposta.ok && retorno.ok === true, id: retorno.id, erro: retorno.error || retorno.detalhe };
+      }
+
+      async function enviarFotosDepoisDoPagamento() {
+        if (!fotosPendentes.length || !agendamentoId || !currentCity) return true;
+        try {
+          const resposta = await fetch('/api/upload-photos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idAgendamento: agendamentoId, cidade: currentCity.aba, fotos: fotosPendentes })
+          });
+          const retorno = await resposta.json().catch(() => ({}));
+          if (!resposta.ok || !retorno.ok) throw new Error(retorno.error || 'Falha ao enviar fotos');
+          fotosPendentes = [];
+          return true;
+        } catch (erro) {
+          console.error('Falha no envio pós-pagamento:', erro);
+          mostrarErros([`Pagamento confirmado, mas as fotos não foram enviadas: ${erro.message}`]);
+          return false;
+        }
       }
 
       async function garantirAgendamentoSalvo(data) {
@@ -1480,6 +1543,7 @@
           }
           if (btnPix) { btnPix.textContent = '✅ SINAL PAGO'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
           if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.classList.remove('btn-desabilitado'); }
+          await enviarFotosDepoisDoPagamento();
           atualizarBotaoFlutuante();
           return true;
         } catch (erro) {
