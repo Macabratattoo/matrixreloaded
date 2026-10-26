@@ -840,7 +840,8 @@
           <h3 class="payment-title">PAGAMENTO DO SINAL</h3>
           <p class="payment-note">Após o pagamento do sinal, o botão ENVIAR AGENDAMENTO será liberado para você confirmar o seu horário.</p>
           <div class="form-group">
-            <button type="button" id="btnPix" class="neon payment-btn-pix">ABRIR PAGAMENTO R$50</button>
+            <button type="button" id="btnPix" class="neon payment-btn-pix">PAGAR COM PIX R$50</button>
+            <button type="button" id="btnCartao" class="neon payment-btn-pix" style="margin-top: 10px;">PAGAR COM CARTÃO R$50</button>
           </div>
           <div id="paymentBrickContainer" style="display: none;"></div>
           <div id="pixResultado" class="verification-area" style="display: none;">
@@ -1304,6 +1305,7 @@
       const form = document.getElementById('agendamentoForm');
       const errosDiv = document.getElementById('erros');
       const btnPix = document.getElementById('btnPix');
+      const btnCartao = document.getElementById('btnCartao');
       const areaVerificar = document.getElementById('areaVerificar');
       const codigoPagamentoInput = document.getElementById('codigoPagamento');
       const btnVerificar = document.getElementById('btnVerificar');
@@ -1315,6 +1317,7 @@
       const MP_PUBLIC_KEY = 'APP_USR-a836e06e-42a7-4e18-9703-9291ebd387d4';
       let paymentBrickController = null;
       let paymentProcessadoId = null;
+      let pixOrderId = null;
       const linhaConfirmado = document.getElementById('linhaConfirmado');
       const btnEnviar = document.getElementById('btnEnviar');
       const btnFlutuante = document.getElementById('btnFlutuante');
@@ -1517,7 +1520,7 @@
         return true;
       }
 
-      async function confirmarPagamento(codigo, silencioso = false) {
+      async function confirmarPagamento(codigo, silencioso = false, tipo = 'payment') {
         if (!agendamentoId || !currentCity) {
           mostrarErros(['Salve o agendamento antes de confirmar o pagamento.']);
           return false;
@@ -1525,7 +1528,7 @@
         try {
           const resposta = await fetch('/api/confirmar-agendamento', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idAgendamento: agendamentoId, paymentId: codigo, cidade: currentCity.aba })
+            body: JSON.stringify({ idAgendamento: agendamentoId, ...(tipo === 'order' ? { orderId: codigo } : { paymentId: codigo }), cidade: currentCity.aba })
           });
           const retorno = await resposta.json().catch(() => ({}));
           if (!resposta.ok || !retorno.ok) {
@@ -1542,6 +1545,7 @@
             linhaConfirmado.style.display = 'block';
           }
           if (btnPix) { btnPix.textContent = '✅ SINAL PAGO'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
+          if (btnCartao) { btnCartao.textContent = '✅ SINAL PAGO'; btnCartao.disabled = true; btnCartao.classList.add('btn-desabilitado'); }
           if (btnEnviar) { btnEnviar.disabled = false; btnEnviar.classList.remove('btn-desabilitado'); }
           await enviarFotosDepoisDoPagamento();
           atualizarBotaoFlutuante();
@@ -1552,16 +1556,16 @@
         }
       }
 
-      async function acompanharPagamento(paymentId) {
+      async function acompanharPagamento(paymentId, tipo = 'payment') {
         const inicio = Date.now();
         const limite = 30 * 60 * 1000;
         while (Date.now() - inicio < limite && estadoPagamento !== 'confirmado') {
           await new Promise(resolve => setTimeout(resolve, 5000));
           try {
-            const resposta = await fetch(`/api/payment-status?id=${encodeURIComponent(paymentId)}`);
+            const resposta = await fetch(`/${tipo === 'order' ? 'api/order-status' : 'api/payment-status'}?id=${encodeURIComponent(paymentId)}`);
             const status = await resposta.json();
             if (status.status === 'approved') {
-              await confirmarPagamento(paymentId, true);
+              await confirmarPagamento(paymentId, true, tipo);
               break;
             }
             if (status.status === 'rejected' || status.status === 'cancelled') {
@@ -1581,9 +1585,9 @@
         const bricksBuilder = mp.bricks();
         paymentBrickController = await bricksBuilder.create('payment', 'paymentBrickContainer', {
           initialization: { amount: 50, payer: { email: data.emailVal } },
-          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all', ticket: 'all', bankTransfer: 'all' } },
+          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all' } },
           callbacks: {
-            onReady: () => { if (btnPix) btnPix.style.display = 'none'; },
+            onReady: () => { if (btnCartao) btnCartao.style.display = 'none'; },
             onSubmit: async ({ formData }) => {
               try {
                 const resposta = await fetch('/api/process-payment', {
@@ -1639,6 +1643,39 @@
         } finally { processando = false; }
       }
 
+      async function iniciarPix() {
+        if (processando || estadoPagamento === 'confirmado') return;
+        const data = getFormData();
+        const erros = validateFormData(data);
+        mostrarErros(erros);
+        if (erros.length > 0) return;
+        processando = true;
+        try {
+          if (!await garantirAgendamentoSalvo(data)) return;
+          const resposta = await fetch('/api/create-pix-order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idAgendamento: agendamentoId, email: data.emailVal })
+          });
+          const order = await resposta.json().catch(() => ({}));
+          if (!resposta.ok || !order.ok) throw new Error(order.detail || order.error || `Erro HTTP ${resposta.status}`);
+          pixOrderId = order.orderId;
+          paymentProcessadoId = order.paymentId;
+          estadoPagamento = 'aguardando';
+          if (order.pix?.qrCodeBase64) {
+            pixQrCode.src = `data:image/png;base64,${order.pix.qrCodeBase64}`;
+            pixQrCode.style.display = 'block';
+          }
+          pixCopiaCola.value = order.pix?.qrCode || '';
+          pixResultado.style.display = 'block';
+          if (btnPix) { btnPix.textContent = '⏳ AGUARDANDO PIX'; btnPix.disabled = true; btnPix.classList.add('btn-desabilitado'); }
+          acompanharPagamento(pixOrderId, 'order');
+        } catch (erro) {
+          console.error('Pix Orders API:', erro);
+          mostrarErros([`Mercado Pago: ${erro.message || 'não foi possível criar o Pix'}`]);
+        } finally { processando = false; }
+      }
+
       function abrirWhatsApp() {
         const data = getFormData();
         const erros = validateFormData(data);
@@ -1657,9 +1694,13 @@
         window.open(WHATSAPP_URL + '?text=' + encodeURIComponent(mensagem), '_blank', 'noopener,noreferrer');
       }
 
-      // Botão "PAGAR R$50"
+      // Pix direto pela Orders API
       if (btnPix) {
-        btnPix.addEventListener('click', iniciarPagamento);
+        btnPix.addEventListener('click', iniciarPix);
+      }
+      // Cartão pelo Payment Brick
+      if (btnCartao) {
+        btnCartao.addEventListener('click', iniciarPagamento);
       }
 
 
@@ -1677,7 +1718,7 @@
           if (estadoPagamento === 'confirmado') {
             abrirWhatsApp();
           } else {
-            iniciarPagamento();
+            iniciarPix();
           }
         });
       }
