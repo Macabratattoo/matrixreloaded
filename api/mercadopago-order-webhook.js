@@ -1,4 +1,5 @@
 const confirmar = require('./confirmar-agendamento');
+const verificarAssinatura = require('./_verify-mercadopago-webhook');
 
 function cidadePorAgendamento(id) {
   const prefixo = String(id || '').toUpperCase().split('-')[1];
@@ -9,6 +10,9 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') return res.status(405).end();
   if (req.method === 'GET') return res.status(200).json({ received: true });
   try {
+    const assinatura = verificarAssinatura(req);
+    if (!assinatura.ok) return res.status(assinatura.status).json({ error: assinatura.error });
+
     const orderId = req.body?.data?.id || req.body?.id;
     const tipo = req.body?.type || req.body?.topic;
     if (tipo && tipo !== 'order' && tipo !== 'orders') return res.status(200).json({ received: true });
