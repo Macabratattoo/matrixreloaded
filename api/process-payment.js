@@ -22,12 +22,24 @@ module.exports = async function handler(req, res) {
     }
     if (!process.env.MP_ACCESS_TOKEN) return res.status(500).json({ error: 'Mercado Pago não configurado' });
 
+    const identificacao = payer.identification && payer.identification.number
+      ? {
+          type: String(payer.identification.type || 'CPF').toUpperCase(),
+          number: String(payer.identification.number).replace(/\D/g, '')
+        }
+      : undefined;
     const pagamento = {
       transaction_amount: VALOR_SINAL,
       description: 'Sinal de agendamento de tatuagem',
       external_reference: idAgendamento,
       payment_method_id: paymentMethodId,
-      payer: { email: payer.email, identification: payer.identification }
+      payer: {
+        email: payer.email,
+        entity_type: ['individual', 'association'].includes(String(payer.entity_type || '').toLowerCase())
+          ? String(payer.entity_type).toLowerCase()
+          : 'individual',
+        ...(identificacao ? { identification: identificacao } : {})
+      }
     };
     if (token) pagamento.token = token;
     if (installments) pagamento.installments = Number(installments);
