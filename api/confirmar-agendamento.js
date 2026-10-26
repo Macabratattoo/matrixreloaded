@@ -15,25 +15,18 @@ const VALOR_SINAL = 50;
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
   try {
-    const { idAgendamento, paymentId, orderId, cidade } = req.body || {};
+    const { idAgendamento, orderId, cidade } = req.body || {};
     const aba = abaDaCidade(cidade);
-    const referenciaPagamento = orderId || paymentId;
-    if (!aba || !idAgendamento || !referenciaPagamento) return res.status(400).json({ error: 'Dados incompletos' });
+    const referenciaPagamento = orderId;
+    if (!aba || !idAgendamento || !orderId) return res.status(400).json({ error: 'Dados incompletos' });
     if (!process.env.MP_ACCESS_TOKEN) return res.status(500).json({ error: 'Mercado Pago não configurado no servidor' });
 
-    let pagamento;
-    if (orderId) {
-      const respOrder = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(orderId)}`, { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } });
-      if (!respOrder.ok) return res.status(400).json({ error: 'Order Pix não encontrada' });
-      const order = await respOrder.json();
-      const transacao = order.transactions?.payments?.[0] || {};
-      pagamento = { status: transacao.status || order.status, transaction_amount: transacao.amount || order.total_amount, external_reference: order.external_reference };
-    } else {
-      const respMp = await fetch(`https://api.mercadopago.com/v1/payments/${encodeURIComponent(paymentId)}`, { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } });
-      if (!respMp.ok) return res.status(400).json({ error: 'Pagamento não encontrado' });
-      pagamento = await respMp.json();
-    }
-    const aprovado = orderId ? ['processed', 'approved', 'accredited'].includes(pagamento.status) : pagamento.status === 'approved';
+    const respOrder = await fetch(`https://api.mercadopago.com/v1/orders/${encodeURIComponent(orderId)}`, { headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` } });
+    if (!respOrder.ok) return res.status(400).json({ error: 'Order não encontrada' });
+    const order = await respOrder.json();
+    const transacao = order.transactions?.payments?.[0] || {};
+    const pagamento = { status: transacao.status || order.status, transaction_amount: transacao.amount || order.total_amount, external_reference: order.external_reference };
+    const aprovado = ['processed', 'approved', 'accredited'].includes(pagamento.status);
     if (!aprovado || Number(pagamento.transaction_amount) < VALOR_SINAL) {
       return res.status(402).json({ error: 'Pagamento ainda não aprovado' });
     }
