@@ -15,6 +15,7 @@ const CALENDAR_ENV_BY_ABA = {
 
 const FUSO = 'America/Sao_Paulo';
 const DURACOES_MINUTOS = { P: 120, M: 240, G: 360 };
+const RESERVA_PENDENTE_MS = 35 * 60 * 1000;
 
 function normalizar(texto) {
   return String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
@@ -73,6 +74,15 @@ function intervaloComoDatas(intervalo) {
 function intervalosConflitam(a, b) {
   return new Date(intervaloComoDatas(a).start) < new Date(b.end) && new Date(intervaloComoDatas(a).end) > new Date(b.start);
 }
+function agendamentoAtivo(linha, agora = Date.now()) {
+  const status = normalizar(linha[4]);
+  if (status === 'confirmado') return true;
+  if (status !== 'aguardando_pagamento') return false;
+  const expiracaoInformada = Date.parse(linha[18] || '');
+  if (Number.isFinite(expiracaoInformada)) return expiracaoInformada > agora;
+  const criadoEm = Date.parse(linha[16] || '');
+  return Number.isFinite(criadoEm) && criadoEm + RESERVA_PENDENTE_MS > agora;
+}
 function googleAuth(scopes) { const credentials = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT); return new google.auth.GoogleAuth({ credentials, scopes }); }
 function sheetsClient() { return google.sheets({ version: 'v4', auth: googleAuth(['https://www.googleapis.com/auth/spreadsheets']) }); }
 function calendarClient() {
@@ -109,8 +119,7 @@ async function pendingIntervalsFromSheet(sheets, aba, minISO, maxISO) {
   const response = await sheets.spreadsheets.values.get({ spreadsheetId: process.env.SHEET_ID, range: `${aba}!A:T` });
   const intervalos = [];
   for (const linha of response.data.values || []) {
-    const status = normalizar(linha[4]);
-    if (status !== 'confirmado') continue;
+    if (!agendamentoAtivo(linha)) continue;
     const data = parseData(linha[9]);
     const hora = parseHorario(linha[10]);
     const calculo = intervalosDoAgendamento(data, hora, linha[11]);
@@ -154,6 +163,6 @@ async function disponibilidade(args) { return new Set((await disponibilidadeDeta
 
 module.exports = {
   ABAS, DURACOES_MINUTOS, FUSO, abaDaCidade, calendarioDaAba, normalizar, normalizarTamanho, duracaoDoTamanho,
-  parseData, parseHorario, somarMinutos, dataSeguinte, intervalosDoAgendamento, intervaloComoDatas, intervalosConflitam,
+  parseData, parseHorario, somarMinutos, dataSeguinte, intervalosDoAgendamento, intervaloComoDatas, intervalosConflitam, agendamentoAtivo,
   googleAuth, sheetsClient, calendarClient, disponibilidade, disponibilidadeDetalhada
 };
