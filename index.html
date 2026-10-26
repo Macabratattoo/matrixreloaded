@@ -838,7 +838,7 @@
           </div>
           <hr class="neon-hr">
           <h3 class="payment-title">PAGAMENTO DO SINAL</h3>
-          <p class="payment-note">Após o pagamento do sinal, o botão ENVIAR AGENDAMENTO será liberado para você confirmar o seu horário.</p>
+          <p class="payment-note">O agendamento só será confirmado após a aprovação real do pagamento pelo Mercado Pago.</p>
           <div class="form-group">
             <button type="button" id="btnPix" class="neon payment-btn-pix">PAGAR COM PIX R$50</button>
             <button type="button" id="btnCartao" class="neon payment-btn-pix" style="margin-top: 10px;">PAGAR COM CARTÃO R$50</button>
@@ -850,7 +850,6 @@
             <textarea id="pixCopiaCola" class="form-textarea" readonly rows="4" aria-label="Pix Copia e Cola"></textarea>
             <button type="button" id="btnCopiarPix" class="neon btn-verificar">COPIAR PIX</button>
           </div>
-          <div id="areaVerificar" class="verification-area" style="display: none;"><p id="verificationDesc" class="verification-desc">Aguardando confirmação do Mercado Pago...</p></div>
           <div id="linhaConfirmado" class="linha-confirmado" style="display: none;" role="status"></div>
           <div id="erros" role="alert" aria-live="polite"></div>
           <button type="button" id="btnEnviar" class="neon btn-submit btn-desabilitado" disabled>ENVIAR AGENDAMENTO</button>
@@ -1306,9 +1305,6 @@
       const errosDiv = document.getElementById('erros');
       const btnPix = document.getElementById('btnPix');
       const btnCartao = document.getElementById('btnCartao');
-      const areaVerificar = document.getElementById('areaVerificar');
-      const codigoPagamentoInput = document.getElementById('codigoPagamento');
-      const btnVerificar = document.getElementById('btnVerificar');
       const paymentBrickContainer = document.getElementById('paymentBrickContainer');
       const pixResultado = document.getElementById('pixResultado');
       const pixQrCode = document.getElementById('pixQrCode');
@@ -1539,7 +1535,6 @@
           if (paymentBrickController) paymentBrickController.unmount();
           if (paymentBrickContainer) paymentBrickContainer.style.display = 'none';
           if (pixResultado) pixResultado.style.display = 'none';
-          if (areaVerificar) areaVerificar.style.display = 'none';
           if (linhaConfirmado) {
             linhaConfirmado.textContent = '✅ Pagamento confirmado e horário criado na agenda.';
             linhaConfirmado.style.display = 'block';
