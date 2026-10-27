@@ -1531,7 +1531,7 @@
             if (!silencioso) mostrarErros([retorno.error || 'Pagamento ainda não aprovado.']);
             return false;
           }
-          estadoPagamento = 'confirmado'; codigoPagamento = codigo;
+          estadoPagamento = 'confirmado'; codigoPagamento = orderId;
           if (paymentBrickController) paymentBrickController.unmount();
           if (paymentBrickContainer) paymentBrickContainer.style.display = 'none';
           if (pixResultado) pixResultado.style.display = 'none';
@@ -1672,7 +1672,7 @@
           });
           const pagamentoPix = await resposta.json().catch(() => ({}));
           if (!resposta.ok || !pagamentoPix.ok) throw new Error(pagamentoPix.detail || pagamentoPix.error || `Erro HTTP ${resposta.status}`);
-          paymentProcessadoId = pagamentoPix.paymentId;
+          paymentProcessadoId = pagamentoPix.orderId;
           estadoPagamento = 'aguardando';
           if (pagamentoPix.pix?.qrCodeBase64) {
             pixQrCode.src = `data:image/png;base64,${pagamentoPix.pix.qrCodeBase64}`;
