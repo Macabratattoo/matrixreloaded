@@ -1516,7 +1516,7 @@
         return true;
       }
 
-      async function confirmarPagamento(codigo, silencioso = false, tipo = 'payment') {
+      async function confirmarPagamento(orderId, silencioso = false) {
         if (!agendamentoId || !currentCity) {
           mostrarErros(['Salve o agendamento antes de confirmar o pagamento.']);
           return false;
@@ -1524,7 +1524,7 @@
         try {
           const resposta = await fetch('/api/confirmar-agendamento', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idAgendamento: agendamentoId, ...(tipo === 'order' ? { orderId: codigo } : { paymentId: codigo }), cidade: currentCity.aba })
+            body: JSON.stringify({ idAgendamento: agendamentoId, orderId, cidade: currentCity.aba })
           });
           const retorno = await resposta.json().catch(() => ({}));
           if (!resposta.ok || !retorno.ok) {
@@ -1575,16 +1575,16 @@
         atualizarBotaoFlutuante();
       }
 
-      async function acompanharPagamento(paymentId) {
+      async function acompanharPagamento(orderId) {
         const inicio = Date.now();
         const limite = 35 * 60 * 1000;
         while (Date.now() - inicio < limite && estadoPagamento !== 'confirmado') {
           await new Promise(resolve => setTimeout(resolve, 5000));
           try {
-            const resposta = await fetch(`/api/status-pagamento?id=${encodeURIComponent(paymentId)}&agendamento=${encodeURIComponent(agendamentoId)}`);
+            const resposta = await fetch(`/api/order-status?id=${encodeURIComponent(orderId)}`);
             const status = await resposta.json();
             if (status.status === 'approved') {
-              await confirmarPagamento(paymentId, true);
+              await confirmarPagamento(orderId, true);
               break;
             }
             if (status.status === 'rejected' || status.status === 'cancelled') {
@@ -1607,59 +1607,40 @@
         paymentBrickContainer.style.display = 'block';
         const mp = new MercadoPago(MP_PUBLIC_KEY, { locale: 'pt-BR' });
         const bricksBuilder = mp.bricks();
-        paymentBrickController = await bricksBuilder.create('payment', 'paymentBrickContainer', {
-          initialization: { amount: 50, payer: { email: data.emailVal, entityType: 'individual' } },
-          customization: { paymentMethods: { creditCard: 'all', debitCard: 'all' } },
+        paymentBrickController = await bricksBuilder.create('cardPayment', 'paymentBrickContainer', {
+          initialization: { amount: 50 },
           callbacks: {
             onReady: () => { if (btnCartao) btnCartao.style.display = 'none'; },
-            onSubmit: async ({ formData }) => {
+            onSubmit: async (formData, additionalData) => {
               try {
-                const resposta = await fetch('/api/process-payment', {
+                const resposta = await fetch('/api/create-order', {
                   method: 'POST', headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                     idAgendamento: agendamentoId,
                     idempotencyKey: cartaoIdempotencyKey || (cartaoIdempotencyKey = `${agendamentoId}-cartao-${window.crypto?.randomUUID?.() || Date.now()}`),
                     formData,
-                    payer: {
-                      email: formData.payer?.email || data.emailVal,
-                      entity_type: 'individual',
-                      identification: formData.payer?.identification
-                    }
+                    paymentTypeId: additionalData?.paymentTypeId,
+                    payer: { email: formData.payer?.email || data.emailVal, identification: formData.payer?.identification }
                   })
                 });
-                const pagamento = await resposta.json().catch(() => ({}));
-                if (!resposta.ok || !pagamento.ok) {
-                  const mensagem = pagamento.detail || pagamento.error || `Erro HTTP ${resposta.status}`;
-                  mostrarErros([`Mercado Pago: ${mensagem}`]);
-                  throw new Error(mensagem);
-                }
-                paymentProcessadoId = pagamento.paymentId;
+                const order = await resposta.json().catch(() => ({}));
+                if (!resposta.ok || !order.ok) throw new Error(order.detail || order.error || `Erro HTTP ${resposta.status}`);
+                paymentProcessadoId = order.orderId;
                 estadoPagamento = 'aguardando';
-                if (btnPix) {
-                  btnPix.disabled = true;
-                  btnPix.classList.add('btn-desabilitado');
-                }
-                if (pagamento.pix?.qrCodeBase64) {
-                  pixQrCode.src = `data:image/png;base64,${pagamento.pix.qrCodeBase64}`;
-                  pixQrCode.style.display = 'block';
-                  pixCopiaCola.value = pagamento.pix.qrCode || '';
-                  pixResultado.style.display = 'block';
-                }
-                if (pagamento.status === 'approved') await confirmarPagamento(paymentProcessadoId);
-                else acompanharPagamento(paymentProcessadoId);
+                if (order.status === 'approved' || order.status === 'processed' || order.status === 'accredited') await confirmarPagamento(order.orderId);
+                else acompanharPagamento(order.orderId);
               } catch (erro) {
-                mostrarErros([`Mercado Pago: ${erro.message || 'não foi possível processar o pagamento'}`]);
+                mostrarErros([`Mercado Pago: ${erro.message || 'não foi possível processar o cartão'}`]);
                 throw erro;
               }
             },
             onError: (erro) => {
-              console.error('Payment Brick:', erro);
+              console.error('Card Payment Brick:', erro);
               mostrarErros([`Mercado Pago: ${erro?.message || 'não foi possível carregar o pagamento'}`]);
             }
           }
         });
       }
-
       async function iniciarPagamento() {
         if (processando || estadoPagamento === 'confirmado') return;
         const data = getFormData();
@@ -1684,10 +1665,10 @@
         processando = true;
         try {
           if (!await garantirAgendamentoSalvo(data)) return;
-          const resposta = await fetch('/api/create-pix-payment', {
+          const resposta = await fetch('/api/create-order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idAgendamento: agendamentoId })
+            body: JSON.stringify({ idAgendamento: agendamentoId, paymentMethodId: 'pix', payer: { email: data.emailVal }, idempotencyKey: `${agendamentoId}-pix-${window.crypto?.randomUUID?.() || Date.now()}` })
           });
           const pagamentoPix = await resposta.json().catch(() => ({}));
           if (!resposta.ok || !pagamentoPix.ok) throw new Error(pagamentoPix.detail || pagamentoPix.error || `Erro HTTP ${resposta.status}`);
