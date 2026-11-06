@@ -5,37 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Política de Privacidade — Bene Bertocco</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #111; }
+    body { font-family: system-ui, sans-serif; max-width: 820px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #111; }
     h1 { font-size: 24px; }
     h2 { font-size: 18px; margin-top: 28px; }
+    ul { padding-left: 24px; }
+    code { background: #f1f1f1; padding: 2px 4px; border-radius: 3px; }
   </style>
 </head>
 <body>
   <h1>Política de Privacidade</h1>
-  <p>Última atualização: 21/10/2026</p>
+  <p>Última atualização: 06/11/2026</p>
 
   <h2>1. Quem somos</h2>
-  <p>Este site é operado por Bene Bertocco, para agendamento de sessões de tatuagem. Contato: benebertocco@gmail.com.</p>
+  <p>Este site é operado por Bene Bertocco para solicitação, organização e confirmação de agendamentos de sessões de tatuagem.</p>
+  <p>Contato: <a href="mailto:benebertocco@gmail.com">benebertocco@gmail.com</a>.</p>
 
-  <h2>2. Quais dados coletamos</h2>
-  <p>Nome, e-mail, telefone/WhatsApp, data e horário desejados, descrição da tatuagem, dúvidas enviadas no formulário e fotos de referência ou do local do corpo enviadas pelo cliente.</p>
+  <h2>2. Dados preenchidos no formulário</h2>
+  <p>Quando você solicita um agendamento, podemos receber e registrar:</p>
+  <ul>
+    <li>nome completo;</li>
+    <li>e-mail;</li>
+    <li>telefone ou WhatsApp;</li>
+    <li>cidade escolhida;</li>
+    <li>data e horário desejados;</li>
+    <li>descrição da tatuagem e região do corpo;</li>
+    <li>tamanho e complexidade selecionados;</li>
+    <li>dúvidas enviadas no formulário;</li>
+    <li>nome da pessoa que fez uma eventual recomendação; e</li>
+    <li>fotos de referência ou do local do corpo, quando enviadas.</li>
+  </ul>
 
-  <h2>3. Para que usamos os dados</h2>
-  <p>Exclusivamente para organizar e confirmar o agendamento e para preparar a sessão de tatuagem.</p>
+  <h2>3. Dados gravados na planilha de agendamentos</h2>
+  <p>Para controlar a agenda e o atendimento, os dados do formulário são gravados em uma planilha administrativa do Google Sheets. O registro pode conter:</p>
+  <ul>
+    <li>identificador interno do agendamento;</li>
+    <li>referência do pagamento e status do agendamento, como <code>aguardando_pagamento</code> ou <code>confirmado</code>;</li>
+    <li>nome, WhatsApp e e-mail;</li>
+    <li>descrição da tatuagem e região do corpo;</li>
+    <li>data, horário e tamanho/complexidade;</li>
+    <li>dúvidas e recomendação;</li>
+    <li>links internos ou referências das fotos enviadas;</li>
+    <li>valor do sinal;</li>
+    <li>data e hora de criação do registro; e</li>
+    <li>identificadores técnicos dos eventos criados no calendário.</li>
+  </ul>
+  <p>A planilha é utilizada para organizar o atendimento, consultar conflitos de horário, acompanhar o pagamento e manter o histórico operacional do agendamento.</p>
 
-  <h2>4. Armazenamento das fotos</h2>
-  <p>As fotos enviadas são guardadas em uma pasta privada no Google Drive, acessível somente pela responsável pelo atendimento. Não são publicadas nem compartilhadas com terceiros.</p>
+  <h2>4. Dados escritos na agenda</h2>
+  <p>Após a aprovação do pagamento, é criado um evento no Google Calendar correspondente à cidade escolhida. O evento pode conter:</p>
+  <ul>
+    <li>título com a identificação da sessão e o nome informado;</li>
+    <li>data e horário de início e término, calculados conforme o tamanho/complexidade escolhido;</li>
+    <li>WhatsApp e e-mail;</li>
+    <li>descrição da tatuagem e região do corpo;</li>
+    <li>tamanho/complexidade;</li>
+    <li>dúvidas e eventual recomendação;</li>
+    <li>referência das fotos, quando houver;</li>
+    <li>referência do pagamento; e</li>
+    <li>código interno do agendamento.</li>
+  </ul>
+  <p>Quando a duração da sessão ultrapassa o final do dia, também pode ser criado um evento técnico de bloqueio para impedir a abertura indevida do horário seguinte.</p>
 
-  <h2>5. Compartilhamento</h2>
-  <p>Não vendemos nem compartilhamos dados pessoais com terceiros. Usamos apenas os serviços necessários para o funcionamento do agendamento: Google (planilha e Drive) e Mercado Pago (pagamento do sinal).</p>
+  <h2>5. Finalidade do tratamento</h2>
+  <p>Os dados são utilizados para:</p>
+  <ul>
+    <li>verificar disponibilidade e evitar conflitos de horários;</li>
+    <li>registrar e organizar o pedido de agendamento;</li>
+    <li>preparar a sessão de tatuagem;</li>
+    <li>confirmar o pagamento do sinal;</li>
+    <li>criar e administrar o evento na agenda;</li>
+    <li>entrar em contato sobre o atendimento; e</li>
+    <li>responder dúvidas e tratar solicitações relacionadas ao agendamento.</li>
+  </ul>
 
-  <h2>6. Pagamento</h2>
-  <p>O pagamento do sinal é processado pelo Mercado Pago. Não armazenamos dados de cartão ou conta bancária.</p>
+  <h2>6. Serviços utilizados</h2>
+  <p>Para operar o fluxo de agendamento, utilizamos serviços de terceiros necessários à execução do serviço:</p>
+  <ul>
+    <li><strong>Google Sheets:</strong> armazenamento administrativo dos registros de agendamento;</li>
+    <li><strong>Google Calendar:</strong> consulta de disponibilidade e criação dos eventos da agenda;</li>
+    <li><strong>Google Drive:</strong> armazenamento das fotos enviadas, em pasta de acesso restrito; e</li>
+    <li><strong>Mercado Pago:</strong> processamento do pagamento do sinal.</li>
+  </ul>
+  <p>Esses serviços podem processar dados conforme suas próprias políticas e condições de uso.</p>
 
-  <h2>7. Seus direitos</h2>
-  <p>Você pode pedir a correção ou a exclusão dos seus dados e das fotos a qualquer momento, pelo e-mail benebertocco@gmail.com ou pelo WhatsApp.</p>
+  <h2>7. Fotos enviadas</h2>
+  <p>As fotos são opcionais e devem ser enviadas somente quando necessárias para avaliar a ideia ou a região do corpo. Elas são armazenadas em uma pasta restrita do Google Drive e utilizadas para preparar o atendimento. Não são publicadas no site nem compartilhadas para finalidade diferente do agendamento, salvo obrigação legal ou autorização específica.</p>
 
-  <h2>8. Alterações</h2>
-  <p>Esta política pode ser atualizada. A versão vigente sempre estará disponível nesta página.</p>
+  <h2>8. Pagamento</h2>
+  <p>O sinal é processado pelo Mercado Pago. O site não armazena número de cartão, código de segurança ou senha bancária. Podemos registrar no controle administrativo o valor do sinal, o identificador técnico da transação, a referência do pagamento e o status necessário para confirmar o agendamento.</p>
+
+  <h2>9. Compartilhamento e acesso</h2>
+  <p>Não vendemos dados pessoais. O acesso aos dados é limitado às pessoas e serviços necessários para administrar o agendamento, o pagamento, a agenda e as fotos. Os dados não são utilizados para publicidade direcionada por este site.</p>
+
+  <h2>10. Retenção e exclusão</h2>
+  <p>Os dados são mantidos pelo período necessário para administrar o agendamento, cumprir obrigações legais e manter registros operacionais. Fotos e informações que não forem mais necessárias podem ser excluídas mediante solicitação, respeitadas as obrigações legais e administrativas aplicáveis.</p>
+
+  <h2>11. Seus direitos</h2>
+  <p>Você pode solicitar confirmação do tratamento, acesso, correção, atualização ou exclusão dos seus dados e das fotos, quando aplicável. Para isso, entre em contato pelo e-mail <a href="mailto:benebertocco@gmail.com">benebertocco@gmail.com</a> ou pelo WhatsApp informado no site.</p>
+
+  <h2>12. Segurança</h2>
+  <p>Adotamos medidas razoáveis para restringir o acesso às planilhas, agendas e pastas utilizadas no atendimento. Nenhum serviço conectado à internet é totalmente livre de riscos; em caso de incidente relevante, serão adotadas as medidas cabíveis.</p>
+
+  <h2>13. Alterações</h2>
+  <p>Esta política pode ser atualizada para refletir mudanças no fluxo de atendimento, nos serviços utilizados ou na legislação. A versão vigente estará disponível nesta página.</p>
 </body>
 </html>
