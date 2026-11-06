@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const {
   FUSO,
   abaDaCidade,
@@ -13,6 +14,32 @@ const {
 } = require('./_booking-utils');
 
 const VALOR_SINAL = 50;
+
+function idDeterministicoDoEvento(idAgendamento, tipo) {
+  const digest = crypto.createHash('sha256').update(`${idAgendamento}:${tipo}`).digest('hex').slice(0, 32);
+  return `tattoo${digest}`;
+}
+
+async function inserirEventoIdempotente(calendar, calendarId, eventId, requestBody) {
+  try {
+    return await calendar.events.insert({ calendarId, requestBody: { ...requestBody, id: eventId } });
+  } catch (erro) {
+    const status = Number(erro.code || erro.response?.status);
+    if (status !== 409) throw erro;
+    return calendar.events.get({ calendarId, eventId });
+  }
+}
+
+async function buscarEventoExistente(calendar, calendarId, eventId) {
+  try {
+    const resposta = await calendar.events.get({ calendarId, eventId });
+    return resposta.data?.status === 'cancelled' ? null : resposta;
+  } catch (erro) {
+    const status = Number(erro.code || erro.response?.status);
+    if (status === 404) return null;
+    throw erro;
+  }
+}
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
@@ -59,52 +86,50 @@ module.exports = async function handler(req, res) {
     if (!calendarId || !calculo) return res.status(500).json({ error: 'Dados de calendário incompletos' });
 
     const calendar = calendarClient();
-    for (const intervalo of calculo.intervalos) {
-      const janelaComFolga = intervaloComoDatasComFolga(intervalo);
-      const busy = await calendar.freebusy.query({
-        requestBody: {
-          timeMin: janelaComFolga.start,
-          timeMax: janelaComFolga.end,
-          timeZone: FUSO,
-          items: [{ id: calendarId }]
+    const idEventoPrincipal = idDeterministicoDoEvento(idAgendamento, 'principal');
+    const eventoPrincipalExistente = await buscarEventoExistente(calendar, calendarId, idEventoPrincipal);
+    if (!eventoPrincipalExistente) {
+      for (const intervalo of calculo.intervalos) {
+        const janelaComFolga = intervaloComoDatasComFolga(intervalo);
+        const busy = await calendar.freebusy.query({
+          requestBody: {
+            timeMin: janelaComFolga.start,
+            timeMax: janelaComFolga.end,
+            timeZone: FUSO,
+            items: [{ id: calendarId }]
+          }
+        });
+        const conflitos = (busy.data.calendars?.[calendarId]?.busy || []).some(ocupado => intervalosConflitam(intervalo, ocupado));
+        if (conflitos) {
+          return res.status(409).json({ error: 'O horário ficou ocupado antes da confirmação' });
         }
-      });
-      const conflitos = (busy.data.calendars?.[calendarId]?.busy || []).some(ocupado => intervalosConflitam(intervalo, ocupado));
-      if (conflitos) {
-        return res.status(409).json({ error: 'O horário ficou ocupado antes da confirmação' });
       }
     }
 
     const eventos = [];
     const principal = calculo.intervalos[0];
-    const eventoPrincipal = await calendar.events.insert({
-      calendarId,
-      requestBody: {
-        summary: `Tatuagem - ${linha[5]}`,
-        description: [
-          `WhatsApp: ${linha[6]}`, `E-mail: ${linha[7]}`, `Tatuagem e local: ${linha[8]}`,
-          `Tamanho: ${tamanho}`, `Dúvidas: ${linha[12] || 'Nenhuma'}`,
-          `Recomendação: ${linha[13] || 'Nenhuma'}`, `Fotos: ${linha[14] || 'Sem fotos'}`,
-          `Pagamento do sinal: ${referenciaPagamento}`, `Código: ${idAgendamento}`
-        ].join('\n'),
-        start: { dateTime: `${principal.dataInicio}T${principal.horaInicio}:00`, timeZone: FUSO },
-        end: { dateTime: `${principal.dataFim}T${principal.horaFim}:00`, timeZone: FUSO }
-      }
+    const eventoPrincipal = eventoPrincipalExistente || await inserirEventoIdempotente(calendar, calendarId, idEventoPrincipal, {
+      summary: `Tatuagem - ${linha[5]}`,
+      description: [
+        `WhatsApp: ${linha[6]}`, `E-mail: ${linha[7]}`, `Tatuagem e local: ${linha[8]}`,
+        `Tamanho: ${tamanho}`, `Dúvidas: ${linha[12] || 'Nenhuma'}`,
+        `Recomendação: ${linha[13] || 'Nenhuma'}`, `Fotos: ${linha[14] || 'Sem fotos'}`,
+        `Pagamento do sinal: ${referenciaPagamento}`, `Código: ${idAgendamento}`
+      ].join('\n'),
+      start: { dateTime: `${principal.dataInicio}T${principal.horaInicio}:00`, timeZone: FUSO },
+      end: { dateTime: `${principal.dataFim}T${principal.horaFim}:00`, timeZone: FUSO }
     });
-    eventos.push(eventoPrincipal.data.id);
+    eventos.push(eventoPrincipal.data.id || idEventoPrincipal);
 
     if (calculo.sobra > 0) {
       const bloqueio = calculo.intervalos[1];
-      const eventoBloqueio = await calendar.events.insert({
-        calendarId,
-        requestBody: {
-          summary: `Bloqueio pós-tatuagem - ${linha[5]}`,
-          description: `Bloqueio de ${calculo.sobra} minutos referente ao agendamento ${idAgendamento}.`,
-          start: { dateTime: `${bloqueio.dataInicio}T${bloqueio.horaInicio}:00`, timeZone: FUSO },
-          end: { dateTime: `${bloqueio.dataFim}T${bloqueio.horaFim}:00`, timeZone: FUSO }
-        }
+      const eventoBloqueio = await inserirEventoIdempotente(calendar, calendarId, idDeterministicoDoEvento(idAgendamento, 'bloqueio-sobra'), {
+        summary: `Bloqueio pós-tatuagem - ${linha[5]}`,
+        description: `Bloqueio de ${calculo.sobra} minutos referente ao agendamento ${idAgendamento}.`,
+        start: { dateTime: `${bloqueio.dataInicio}T${bloqueio.horaInicio}:00`, timeZone: FUSO },
+        end: { dateTime: `${bloqueio.dataFim}T${bloqueio.horaFim}:00`, timeZone: FUSO }
       });
-      eventos.push(eventoBloqueio.data.id);
+      eventos.push(eventoBloqueio.data.id || idDeterministicoDoEvento(idAgendamento, 'bloqueio-sobra'));
     }
 
     await sheets.spreadsheets.values.update({
@@ -132,3 +157,5 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Falha ao confirmar: ' + erro.message });
   }
 };
+
+module.exports.idDeterministicoDoEvento = idDeterministicoDoEvento;

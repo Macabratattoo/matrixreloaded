@@ -10,6 +10,7 @@ const {
   intervalosConflitam,
   agendamentoAtivo
 } = require('../api/_booking-utils');
+const { idDeterministicoDoEvento } = require('../api/confirmar-agendamento');
 
 function atendimento(data, hora, tamanho) {
   return intervalosDoAgendamento(data, hora, tamanho).intervalos[0];
@@ -92,4 +93,15 @@ test('converte intervalos do agendamento no formato usado pelo Calendar', () => 
     start: '2026-12-10T17:00:00-03:00',
     end: '2026-12-10T19:00:00-03:00'
   });
+});
+
+test('gera IDs estáveis e distintos para confirmação idempotente', () => {
+  const principal = idDeterministicoDoEvento('AG-GRA-123', 'principal');
+  const principalNovamente = idDeterministicoDoEvento('AG-GRA-123', 'principal');
+  const bloqueio = idDeterministicoDoEvento('AG-GRA-123', 'bloqueio-sobra');
+
+  assert.equal(principal, principalNovamente);
+  assert.notEqual(principal, bloqueio);
+  assert.match(principal, /^[a-v0-9]{5,1024}$/);
+  assert.match(bloqueio, /^[a-v0-9]{5,1024}$/);
 });
