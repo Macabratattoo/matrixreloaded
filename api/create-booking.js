@@ -14,6 +14,7 @@ const {
   disponibilidadeDetalhada,
   FUSO
 } = require('./_booking-utils');
+const { criarTokenUpload } = require('./_upload-utils');
 
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
@@ -63,6 +64,7 @@ module.exports = async function handler(req, res) {
     }
 
     const idAgendamento = `AG-${aba.substring(0, 3).toUpperCase()}-${Date.now()}`;
+    const tokenUpload = criarTokenUpload();
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.SHEET_ID,
       range: `${aba}!A:T`,
@@ -70,10 +72,10 @@ module.exports = async function handler(req, res) {
       requestBody: { values: [[
         linhas.length, idAgendamento, idAgendamento, '', 'aguardando_pagamento',
         nome, whatsapp, email, tatuagem, dataISO, hora, tamanhoCodigo,
-        duvidas || '', recomendacao || '', '', 50, new Date().toISOString(), '', '', ''
+        duvidas || '', recomendacao || '', '', 50, new Date().toISOString(), '', '', tokenUpload
       ]] }
     });
-    return res.status(200).json({ ok: true, id: idAgendamento, tamanho: tamanhoCodigo, duracaoMinutos: calculo.duracao, sobraMinutos: calculo.sobra });
+    return res.status(200).json({ ok: true, id: idAgendamento, uploadToken: tokenUpload, tamanho: tamanhoCodigo, duracaoMinutos: calculo.duracao, sobraMinutos: calculo.sobra });
   } catch (erro) {
     console.error(erro);
     return res.status(500).json({ error: 'Falha ao salvar: ' + erro.message });

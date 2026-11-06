@@ -445,6 +445,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let codigoPagamento = '';
     let fotosPendentes = [];
     let agendamentoId = null;
+    let uploadToken = null;
     let processando = false;
 
     function getFormData() {
@@ -604,16 +605,20 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     
       const retorno = await resposta.json().catch(() => ({}));
-      return { ok: resposta.ok && retorno.ok === true, id: retorno.id, erro: retorno.error || retorno.detalhe };
+      return { ok: resposta.ok && retorno.ok === true, id: retorno.id, uploadToken: retorno.uploadToken, erro: retorno.error || retorno.detalhe };
     }
 
     async function enviarFotosDepoisDoPagamento() {
-      if (!fotosPendentes.length || !agendamentoId || !currentCity) return true;
+      if (!fotosPendentes.length) return true;
+      if (!agendamentoId || !uploadToken || !currentCity) {
+        mostrarErros(['Não foi possível autenticar o envio das fotos. Refaça o agendamento.']);
+        return false;
+      }
       try {
         const resposta = await fetch('/api/upload-photos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idAgendamento: agendamentoId, cidade: currentCity.aba, fotos: fotosPendentes })
+          body: JSON.stringify({ idAgendamento: agendamentoId, cidade: currentCity.aba, token: uploadToken, fotos: fotosPendentes })
         });
         const retorno = await resposta.json().catch(() => ({}));
         if (!resposta.ok || !retorno.ok) throw new Error(retorno.error || 'Falha ao enviar fotos');
@@ -635,7 +640,8 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
       }
       agendamentoId = resultado.id;
-      sessionStorage.setItem('bookingContext', JSON.stringify({ id: agendamentoId, cidade: currentCity.aba }));
+      uploadToken = resultado.uploadToken;
+      sessionStorage.setItem('bookingContext', JSON.stringify({ id: agendamentoId, cidade: currentCity.aba, uploadToken }));
       return true;
     }
 
@@ -878,6 +884,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const contexto = JSON.parse(sessionStorage.getItem('bookingContext') || 'null');
       if (contexto?.id) {
         agendamentoId = contexto.id;
+        uploadToken = contexto.uploadToken || null;
         const card = Array.from(cityCards).find(item => item.dataset.aba === contexto.cidade);
         if (card) card.click();
       }
