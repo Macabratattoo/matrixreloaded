@@ -7,7 +7,9 @@ const {
   parseData,
   parseHorario,
   sheetsClient,
-  intervalosDoAgendamento
+  intervalosDoAgendamento,
+  intervaloComoDatasComFolga,
+  intervalosConflitam
 } = require('./_booking-utils');
 
 const VALOR_SINAL = 50;
@@ -58,15 +60,17 @@ module.exports = async function handler(req, res) {
 
     const calendar = calendarClient();
     for (const intervalo of calculo.intervalos) {
+      const janelaComFolga = intervaloComoDatasComFolga(intervalo);
       const busy = await calendar.freebusy.query({
         requestBody: {
-          timeMin: `${intervalo.dataInicio}T${intervalo.horaInicio}:00-03:00`,
-          timeMax: `${intervalo.dataFim}T${intervalo.horaFim}:00-03:00`,
+          timeMin: janelaComFolga.start,
+          timeMax: janelaComFolga.end,
           timeZone: FUSO,
           items: [{ id: calendarId }]
         }
       });
-      if ((busy.data.calendars?.[calendarId]?.busy || []).length > 0) {
+      const conflitos = (busy.data.calendars?.[calendarId]?.busy || []).some(ocupado => intervalosConflitam(intervalo, ocupado));
+      if (conflitos) {
         return res.status(409).json({ error: 'O horário ficou ocupado antes da confirmação' });
       }
     }

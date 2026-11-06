@@ -8,6 +8,7 @@ const {
   calendarioDaAba,
   intervalosDoAgendamento,
   intervaloComoDatas,
+  intervaloComoDatasComFolga,
   intervalosConflitam,
   agendamentoAtivo,
   disponibilidadeDetalhada,
@@ -50,13 +51,15 @@ module.exports = async function handler(req, res) {
     const calendarId = calendarioDaAba(aba);
     const calendar = calendarClient();
     for (const intervalo of calculo.intervalos) {
+      const janelaComFolga = intervaloComoDatasComFolga(intervalo);
       const busy = await calendar.freebusy.query({ requestBody: {
-        timeMin: `${intervalo.dataInicio}T${intervalo.horaInicio}:00-03:00`,
-        timeMax: `${intervalo.dataFim}T${intervalo.horaFim}:00-03:00`,
+        timeMin: janelaComFolga.start,
+        timeMax: janelaComFolga.end,
         timeZone: FUSO,
         items: [{ id: calendarId }]
       }});
-      if ((busy.data.calendars?.[calendarId]?.busy || []).length > 0) return res.status(409).json({ error: 'O horário acabou de ser ocupado' });
+      const conflitos = (busy.data.calendars?.[calendarId]?.busy || []).some(ocupado => intervalosConflitam(intervalo, ocupado));
+      if (conflitos) return res.status(409).json({ error: 'O horário acabou de ser ocupado ou ainda está dentro da folga obrigatória' });
     }
 
     const idAgendamento = `AG-${aba.substring(0, 3).toUpperCase()}-${Date.now()}`;

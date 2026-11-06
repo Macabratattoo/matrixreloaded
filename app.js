@@ -252,8 +252,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function horarioConflita(dataISO, hora) {
       if (!selectedSize?.code) return false;
+      const folgaMs = 60 * 60000;
       return intervalosDaEscolha(dataISO, hora, selectedSize.code).some(escolhido =>
-        intervalosOcupados.some(ocupado => escolhido.start < new Date(ocupado.end) && escolhido.end > new Date(ocupado.start))
+        intervalosOcupados.some(ocupado => {
+          const ocupadoInicio = new Date(ocupado.start);
+          const ocupadoFim = new Date(new Date(ocupado.end).getTime() + folgaMs);
+          const escolhidoFim = new Date(escolhido.end.getTime() + folgaMs);
+          return escolhido.start < ocupadoFim && escolhidoFim > ocupadoInicio;
+        })
       );
     }
 

@@ -15,6 +15,7 @@ const CALENDAR_ENV_BY_ABA = {
 
 const FUSO = 'America/Sao_Paulo';
 const DURACOES_MINUTOS = { P: 120, M: 240, G: 360 };
+const FOLGA_MINUTOS = 60;
 const RESERVA_PENDENTE_MS = 35 * 60 * 1000;
 
 function normalizar(texto) {
@@ -71,8 +72,19 @@ function intervalosDoAgendamento(dataISO, hora, tamanho) {
 function intervaloComoDatas(intervalo) {
   return { start: `${intervalo.dataInicio}T${intervalo.horaInicio}:00-03:00`, end: `${intervalo.dataFim}T${intervalo.horaFim}:00-03:00` };
 }
+function intervaloComoDatasComFolga(intervalo) {
+  const datas = intervaloComoDatas(intervalo);
+  return {
+    start: new Date(new Date(datas.start).getTime() - FOLGA_MINUTOS * 60000).toISOString(),
+    end: new Date(new Date(datas.end).getTime() + FOLGA_MINUTOS * 60000).toISOString()
+  };
+}
 function intervalosConflitam(a, b) {
-  return new Date(intervaloComoDatas(a).start) < new Date(b.end) && new Date(intervaloComoDatas(a).end) > new Date(b.start);
+  const aDatas = intervaloComoDatas(a);
+  const aFimComFolga = new Date(aDatas.end).getTime() + FOLGA_MINUTOS * 60000;
+  const bInicio = new Date(b.start);
+  const bFim = new Date(b.end).getTime() + FOLGA_MINUTOS * 60000;
+  return new Date(aDatas.start) < new Date(bFim) && new Date(aFimComFolga) > bInicio;
 }
 function agendamentoAtivo(linha, agora = Date.now()) {
   const status = normalizar(linha[4]);
@@ -162,7 +174,7 @@ async function disponibilidadeDetalhada({ aba, minISO, maxISO }) {
 async function disponibilidade(args) { return new Set((await disponibilidadeDetalhada(args)).indisponiveis); }
 
 module.exports = {
-  ABAS, DURACOES_MINUTOS, FUSO, abaDaCidade, calendarioDaAba, normalizar, normalizarTamanho, duracaoDoTamanho,
-  parseData, parseHorario, somarMinutos, dataSeguinte, intervalosDoAgendamento, intervaloComoDatas, intervalosConflitam, agendamentoAtivo,
+  ABAS, DURACOES_MINUTOS, FUSO, FOLGA_MINUTOS, abaDaCidade, calendarioDaAba, normalizar, normalizarTamanho, duracaoDoTamanho,
+  parseData, parseHorario, somarMinutos, dataSeguinte, intervalosDoAgendamento, intervaloComoDatas, intervaloComoDatasComFolga, intervalosConflitam, agendamentoAtivo,
   googleAuth, sheetsClient, calendarClient, disponibilidade, disponibilidadeDetalhada
 };
