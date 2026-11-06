@@ -695,47 +695,43 @@
         padding: 18px 14px;
       }
     }
-    /* grid das fotos do portifolio */
-    .portfolio-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 0 16px;
-    }
-    
-    .portfolio-col {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-    }
-    
-    /* Cada foto volta a preencher o quadrado verde, sem cartão branco */
-    .portfolio-item {
-      display: block;
-      border: 1px solid #39ff14;
-      overflow: hidden;
-    }
-    
-    .portfolio-item img {
-      display: block;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: transform 0.3s ease;
-    }
-    
-    /* Zoom sutil quando passa o mouse — indica que é clicável */
-    .portfolio-item:hover img {
-      transform: scale(1.05);
-    }
-    
-    @media (max-width: 768px) {
-      .portfolio-grid {
-        grid-template-columns: 1fr;
-      }
-    }
+     <section id="portfolio" class="portfolio-section">
+        <h2 class="portfolio-title">PORTFOLIO</h2>
+
+        <div class="portfolio-grid">
+
+          <!-- Coluna 1 — @benebtattoo -->
+          <div class="portfolio-col">
+            <a class="portfolio-item" href="https://instagram.com/benebtattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel1.jpg" alt="Bene Tattoo" loading="lazy">
+            </a>
+            <a class="portfolio-item" href="https://instagram.com/benebtattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel2.jpg" alt="Bene Tattoo" loading="lazy">
+            </a>
+          </div>
+
+          <!-- Coluna 2 — @macabratattoo -->
+          <div class="portfolio-col">
+            <a class="portfolio-item" href="https://instagram.com/macabratattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel3.jpg" alt="Macabra Tattoo" loading="lazy">
+            </a>
+            <a class="portfolio-item" href="https://instagram.com/macabratattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel4.jpg" alt="Macabra Tattoo" loading="lazy">
+            </a>
+          </div>
+
+          <!-- Coluna 3 — @cy6tattoo -->
+          <div class="portfolio-col">
+            <a class="portfolio-item" href="https://instagram.com/cy6tattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel5.jpg" alt="CY6 Tattoo" loading="lazy">
+            </a>
+            <a class="portfolio-item" href="https://instagram.com/cy6tattoo" target="_blank" rel="noreferrer">
+              <img src="portfolio/reel6.jpg" alt="CY6 Tattoo" loading="lazy">
+            </a>
+          </div>
+
+        </div>
+      </section>
   </style>
   <script src="https://sdk.mercadopago.com/js/v2"></script>
 </head>
