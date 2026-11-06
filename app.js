@@ -250,10 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
       return intervalos;
     }
 
-    function horarioConflita(dataISO, hora) {
-      if (!selectedSize?.code) return false;
+    function horarioConflita(dataISO, hora, tamanho) {
+      if (!tamanho) return false;
       const folgaMs = 60 * 60000;
-      return intervalosDaEscolha(dataISO, hora, selectedSize.code).some(escolhido =>
+      return intervalosDaEscolha(dataISO, hora, tamanho).some(escolhido =>
         intervalosOcupados.some(ocupado => {
           const ocupadoInicio = new Date(ocupado.start);
           const ocupadoFim = new Date(new Date(ocupado.end).getTime() + folgaMs);
@@ -265,9 +265,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function atualizarHorariosDisponiveis() {
       if (!horarioInput) return;
+      const duracoes = { P: 120, M: 240, G: 360 };
+      const tamanhos = selectedSize?.code ? [selectedSize.code] : Object.keys(duracoes);
       Array.from(horarioInput.options).forEach(option => {
         if (!option.value) return;
-        const bloqueado = Boolean(dataInput.value && selectedSize?.code && horarioConflita(dataInput.value, option.value));
+        const bloqueado = Boolean(dataInput.value && tamanhos.every(tamanho => horarioConflita(dataInput.value, option.value, tamanho)));
         option.disabled = bloqueado;
         option.title = bloqueado ? 'Conflita com outro agendamento' : '';
       });
