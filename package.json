@@ -1,6 +1,9 @@
 {
   "name": "matrixreloaded",
   "version": "1.0.0",
+  "scripts": {
+    "test": "node --test"
+  },
   "dependencies": {
     "googleapis": "^140.0.0",
     "mercadopago": "^3.6.1"
